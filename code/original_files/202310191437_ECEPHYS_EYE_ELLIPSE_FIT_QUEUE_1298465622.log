@@ -1,0 +1,734 @@
+==========================================
+SLURM_JOB_ID = 11613538
+Username = mongrel
+Group = 301
+SLURM_JOB_NODELIST = n240
+==========================================
+# packages in environment at /allen/aibs/technology/waynew/conda/dlcPy36:
+#
+# Name                    Version                   Build  Channel
+backports                 1.0                        py_2    conda-forge
+backports.weakref         1.0rc1                   py36_1    conda-forge
+bleach                    1.5.0                    py36_0    conda-forge
+ca-certificates           2019.3.9             hecc5488_0    conda-forge
+certifi                   2019.3.9                 py36_0    conda-forge
+chardet                   3.0.4                     <pip>
+click                     7.1.2                     <pip>
+cloudpickle               1.4.1                     <pip>
+cudatoolkit               8.0                           3  
+cudnn                     6.0.21                cuda8.0_0  
+cycler                    0.10.0                    <pip>
+decorator                 4.4.2                     <pip>
+deeplabcut                2.0.6.3                   <pip>
+easydict                  1.9                       <pip>
+h5py                      2.10.0                    <pip>
+html5lib                  0.9999999                py36_0    conda-forge
+idna                      2.9                       <pip>
+imageio                   2.3.0                     <pip>
+intel-openmp              2020.0.133                <pip>
+ipython                   6.0.0                     <pip>
+ipython-genutils          0.2.0                     <pip>
+jedi                      0.17.0                    <pip>
+kiwisolver                1.2.0                     <pip>
+libblas                   3.8.0                4_openblas    conda-forge
+libcblas                  3.8.0                4_openblas    conda-forge
+libffi                    3.2.1             he1b5a44_1006    conda-forge
+libgcc                    7.2.0                h69d50b8_2    conda-forge
+libgcc-ng                 7.3.0                hdf63c60_0    https://anaconda.org/anaconda/libgcc-ng/7.3.0/download
+libgfortran-ng            7.2.0                hdf63c60_3    https://anaconda.org/anaconda/libgfortran-ng/7.2.0/download
+liblapack                 3.8.0                4_openblas    conda-forge
+libprotobuf               3.7.0                h8b12597_2    conda-forge
+libstdcxx-ng              7.3.0                hdf63c60_0    https://anaconda.org/anaconda/libstdcxx-ng/7.3.0/download
+markdown                  2.6.11                     py_0    conda-forge
+matplotlib                3.2.1                     <pip>
+moviepy                   0.2.3.5                   <pip>
+ncurses                   6.1               hf484d3e_1002    conda-forge
+networkx                  2.4                       <pip>
+numexpr                   2.7.1                     <pip>
+numpy                     1.14.6                    <pip>
+openblas                  0.3.5             h9ac9557_1001    https://anaconda.org/conda-forge/openblas/0.3.5/download
+opencv-python             3.4.9.33                  <pip>
+openssl                   1.1.1b               h14c3975_1    conda-forge
+pandas                    0.21.0                    <pip>
+parso                     0.7.0                     <pip>
+patsy                     0.5.1                     <pip>
+pexpect                   4.8.0                     <pip>
+pickleshare               0.7.5                     <pip>
+Pillow                    7.1.2                     <pip>
+pip                       19.0.3                   py36_0    conda-forge
+prompt-toolkit            1.0.18                    <pip>
+protobuf                  3.7.0            py36he1b5a44_1    conda-forge
+ptyprocess                0.6.0                     <pip>
+Pygments                  2.6.1                     <pip>
+pyparsing                 2.4.7                     <pip>
+python                    3.6.7             h381d211_1004    conda-forge
+python-dateutil           2.7.3                     <pip>
+pytz                      2020.1                    <pip>
+PyWavelets                1.1.1                     <pip>
+PyYAML                    5.3.1                     <pip>
+readline                  7.0               hf8c457e_1001    conda-forge
+requests                  2.23.0                    <pip>
+ruamel.yaml               0.15.0                    <pip>
+scikit-image              0.14.5                    <pip>
+scikit-learn              0.19.2                    <pip>
+scipy                     1.1.0                     <pip>
+setuptools                40.8.0                   py36_0    conda-forge
+simplegeneric             0.8.1                     <pip>
+six                       1.11.0                    <pip>
+sqlite                    3.26.0            h67949de_1001    conda-forge
+statsmodels               0.9.0                     <pip>
+tables                    3.6.1                     <pip>
+tensorflow-gpu            1.3.0                         0  
+tensorflow-gpu-base       1.3.0           py36cuda8.0cudnn6.0_1  
+tensorflow-tensorboard    0.1.5                    py36_0  
+tk                        8.6.9             h84994c4_1000    conda-forge
+tqdm                      4.46.0                    <pip>
+traitlets                 4.3.3                     <pip>
+urllib3                   1.25.9                    <pip>
+wcwidth                   0.1.9                     <pip>
+webencodings              0.5.1                      py_1    conda-forge
+werkzeug                  0.14.1                     py_0    conda-forge
+wheel                     0.31.1                    <pip>
+xz                        5.2.4             h14c3975_1001    conda-forge
+zlib                      1.2.11            h14c3975_1004    conda-forge
+/allen/programs/mindscope/production/openscope/prod0/specimen_1292228830/ecephys_session_1298465622/eye_tracking/1298465622_692072_20230921.eyeDeepCut_resnet50_universal_eye_trackingJul10shuffle1_1030000.h5
+/allen/programs/mindscope/production/openscope/prod0/specimen_1292228830/ecephys_session_1298465622/eye_tracking/1298465622_ellipse.h5
+0
+1000
+index 0 is out of bounds for axis 1 with size 0
+2000
+3000
+4000
+5000
+6000
+7000
+8000
+9000
+10000
+11000
+12000
+13000
+14000
+15000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+16000
+17000
+18000
+19000
+20000
+21000
+22000
+23000
+24000
+25000
+26000
+27000
+28000
+29000
+30000
+31000
+32000
+33000
+34000
+35000
+36000
+37000
+38000
+39000
+40000
+41000
+42000
+43000
+index 0 is out of bounds for axis 1 with size 0
+44000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+45000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+46000
+47000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+48000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+49000
+index 0 is out of bounds for axis 1 with size 0
+50000
+51000
+52000
+53000
+54000
+55000
+56000
+57000
+58000
+59000
+60000
+index 0 is out of bounds for axis 1 with size 0
+61000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+62000
+63000
+64000
+65000
+66000
+67000
+68000
+69000
+70000
+index 0 is out of bounds for axis 1 with size 0
+71000
+72000
+73000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+74000
+75000
+index 0 is out of bounds for axis 1 with size 0
+76000
+77000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+78000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+79000
+index 0 is out of bounds for axis 1 with size 0
+80000
+index 0 is out of bounds for axis 1 with size 0
+81000
+82000
+index 0 is out of bounds for axis 1 with size 0
+83000
+84000
+85000
+86000
+87000
+88000
+89000
+90000
+91000
+92000
+93000
+94000
+95000
+index 0 is out of bounds for axis 1 with size 0
+96000
+97000
+98000
+99000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+100000
+101000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+102000
+103000
+104000
+105000
+106000
+107000
+108000
+109000
+110000
+111000
+index 0 is out of bounds for axis 1 with size 0
+112000
+113000
+114000
+115000
+116000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+117000
+118000
+119000
+120000
+121000
+122000
+123000
+124000
+125000
+126000
+127000
+128000
+129000
+index 0 is out of bounds for axis 1 with size 0
+130000
+131000
+132000
+133000
+134000
+135000
+136000
+137000
+138000
+139000
+140000
+141000
+142000
+143000
+index 0 is out of bounds for axis 1 with size 0
+144000
+145000
+146000
+147000
+148000
+149000
+150000
+151000
+152000
+153000
+index 0 is out of bounds for axis 1 with size 0
+154000
+index 0 is out of bounds for axis 1 with size 0
+155000
+156000
+157000
+158000
+159000
+160000
+index 0 is out of bounds for axis 1 with size 0
+161000
+index 0 is out of bounds for axis 1 with size 0
+162000
+163000
+164000
+165000
+166000
+167000
+168000
+169000
+170000
+171000
+172000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+173000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+174000
+175000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+176000
+177000
+178000
+179000
+180000
+181000
+index 0 is out of bounds for axis 1 with size 0
+182000
+183000
+184000
+185000
+186000
+187000
+188000
+index 0 is out of bounds for axis 1 with size 0
+189000
+190000
+191000
+192000
+193000
+194000
+195000
+196000
+197000
+198000
+index 0 is out of bounds for axis 1 with size 0
+199000
+200000
+201000
+202000
+203000
+204000
+205000
+index 0 is out of bounds for axis 1 with size 0
+206000
+207000
+index 0 is out of bounds for axis 1 with size 0
+208000
+209000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+210000
+index 0 is out of bounds for axis 1 with size 0
+211000
+212000
+index 0 is out of bounds for axis 1 with size 0
+213000
+214000
+215000
+216000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+217000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+218000
+index 0 is out of bounds for axis 1 with size 0
+219000
+220000
+221000
+222000
+223000
+224000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+225000
+226000
+227000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+228000
+229000
+230000
+231000
+232000
+index 0 is out of bounds for axis 1 with size 0
+233000
+234000
+235000
+index 0 is out of bounds for axis 1 with size 0
+236000
+237000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+238000
+239000
+240000
+241000
+242000
+243000
+244000
+245000
+246000
+247000
+248000
+249000
+250000
+251000
+252000
+253000
+254000
+index 0 is out of bounds for axis 1 with size 0
+255000
+256000
+257000
+258000
+259000
+260000
+261000
+262000
+index 0 is out of bounds for axis 1 with size 0
+263000
+264000
+265000
+index 0 is out of bounds for axis 1 with size 0
+266000
+267000
+268000
+index 0 is out of bounds for axis 1 with size 0
+269000
+270000
+271000
+272000
+273000
+274000
+275000
+276000
+277000
+278000
+279000
+280000
+281000
+282000
+283000
+284000
+285000
+286000
+287000
+288000
+289000
+290000
+index 0 is out of bounds for axis 1 with size 0
+291000
+292000
+293000
+index 0 is out of bounds for axis 1 with size 0
+294000
+295000
+296000
+297000
+298000
+299000
+300000
+301000
+302000
+303000
+304000
+305000
+306000
+307000
+308000
+index 0 is out of bounds for axis 1 with size 0
+309000
+310000
+311000
+312000
+313000
+314000
+315000
+316000
+317000
+318000
+319000
+320000
+321000
+322000
+323000
+324000
+325000
+326000
+327000
+328000
+329000
+330000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+331000
+332000
+333000
+index 0 is out of bounds for axis 1 with size 0
+334000
+index 0 is out of bounds for axis 1 with size 0
+335000
+index 0 is out of bounds for axis 1 with size 0
+336000
+337000
+338000
+339000
+340000
+index 0 is out of bounds for axis 1 with size 0
+341000
+342000
+343000
+344000
+345000
+346000
+index 0 is out of bounds for axis 1 with size 0
+347000
+index 0 is out of bounds for axis 1 with size 0
+348000
+349000
+index 0 is out of bounds for axis 1 with size 0
+350000
+351000
+352000
+353000
+354000
+355000
+index 0 is out of bounds for axis 1 with size 0
+356000
+357000
+358000
+359000
+360000
+361000
+362000
+363000
+364000
+365000
+366000
+367000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+368000
+369000
+370000
+371000
+372000
+373000
+374000
+375000
+376000
+377000
+378000
+379000
+380000
+381000
+382000
+383000
+384000
+385000
+386000
+387000
+index 0 is out of bounds for axis 1 with size 0
+388000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+389000
+390000
+391000
+392000
+393000
+394000
+395000
+396000
+397000
+398000
+399000
+400000
+401000
+402000
+index 0 is out of bounds for axis 1 with size 0
+403000
+404000
+405000
+406000
+407000
+408000
+409000
+410000
+411000
+412000
+413000
+414000
+415000
+416000
+417000
+418000
+419000
+420000
+index 0 is out of bounds for axis 1 with size 0
+421000
+index 0 is out of bounds for axis 1 with size 0
+422000
+index 0 is out of bounds for axis 1 with size 0
+423000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+424000
+425000
+426000
+427000
+428000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+429000
+index 0 is out of bounds for axis 1 with size 0
+430000
+431000
+432000
+index 0 is out of bounds for axis 1 with size 0
+433000
+434000
+435000
+436000
+437000
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+index 0 is out of bounds for axis 1 with size 0
+438000
+439000
+440000
+441000
+442000
+443000
+444000
+445000
+446000
+447000
+448000
+449000
+450000
+451000
+452000
+453000
+454000
+455000
+456000
+457000
+458000
+459000
+460000
+461000
+462000
+463000
+464000
+465000
+466000
+467000
+468000
+469000
+470000
+471000
+472000
+473000
+474000
+475000
+476000
+477000
+478000
+479000
+480000
+481000
+482000
+483000
+484000
+485000
+index 0 is out of bounds for axis 1 with size 0
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100    39    0    26  100    13    169     84 --:--:-- --:--:-- --:--:--   168100    39    0    26  100    13    168     84 --:--:-- --:--:-- --:--:--   168
+{"message":"finished job"}
