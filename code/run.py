@@ -16,11 +16,11 @@ if __name__ == "__main__":
 
     # process first eye video found
     input_video_file_path: pathlib.Path = next(utils.get_eye_video_paths())
-    print(f"Reading video: {input_video_file_path.as_posix()}")
+    print(f"Reading video: {input_video_file_path}")
 
     # phase 1: track points in video and generate h5 file ------------------------- #
     dlc_output_file_path: pathlib.Path = utils.get_dlc_output_path(video_file_path)
-    print(f"Writing DLC analysis: {dlc_output_file_path.as_posix()}")
+    print(f"Writing DLC analysis: {dlc_output_file_path}")
     deeplabcut.analyze_videos(
         config=utils.DLC_PROJECT_PATH / 'config.yaml',
         videos=[
@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
     # phase 2: fit ellipses to eye perimeter, pupil, and corneal reflection ------- #
     ellipse_output_file_path = dlc_output_file_path.parent / 'ellipse.h5'
-    print(f"Writing ellipse fits: {ellipse_output_file_path")
+    print(f"Writing ellipse fits: {ellipse_output_file_path}")
     utils.fit(
         h5file_path=dlc_output_file_path.as_posix(), 
         ellipse_file_path=ellipse_output_file_path.as_posix(),
@@ -42,3 +42,4 @@ if __name__ == "__main__":
     # TODO output DLC annotation timeseries to NWB.acquisition
     # TODO append BehaviorSeries/Events to NWB
     # TODO use optional rig info to compute gaze location on monitor
+    # TODO create asset from results
