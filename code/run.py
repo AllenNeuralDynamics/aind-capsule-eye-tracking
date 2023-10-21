@@ -2,8 +2,7 @@ import os
 import sys
 import pathlib
 
-os.environ["DLClight"]="True"
-
+os.environ["DLClight"]="True" # set before importing DLC
 import deeplabcut
 import numpy as np
 import pandas as pd
@@ -11,10 +10,7 @@ import tensorflow as tf
 
 import utils
 
-# cudadev=os.system("cat $PBS_GPUFILE | rev | cut -d\"u\" -f1")
-# os.environ['CUDA_VISIBLE_DEVICES'] = str(cudadev)
 print(f"{os.environ['CUDA_VISIBLE_DEVICES'] = }")
-
 
 if __name__ == "__main__":
 
@@ -40,3 +36,9 @@ if __name__ == "__main__":
         h5file_path=dlc_output_file_path.as_posix(), 
         ellipse_file_path=ellipse_output_file_path.as_posix(),
     )
+
+    # TODO compute pupil area timeseries
+    # TODO store unobserved pupil frames (blinks or stress)
+    # TODO output DLC annotation timeseries to NWB.acquisition
+    # TODO append BehaviorSeries/Events to NWB
+    # TODO use optional rig info to compute gaze location on monitor
