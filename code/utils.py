@@ -1,5 +1,32 @@
+from __future__ import annotations
+
+import pathlib
+from typing import Iterator
+
 import numpy as np
 import pandas as pd
+
+DATA_PATH = pathlib.Path('/root/capsule/data/')
+RESULTS_PATH = pathlib.Path('/root/capsule/results/')
+
+DLC_PROJECT_PATH = DATA_PATH / 'universal_eye_tracking-peterl-2019-07-10'
+DLC_LABEL = 'DeepCut_resnet50_universal_eye_trackingJul10shuffle1_1030000'
+
+VIDEO_SUFFIXES = ('.mp4', '.avi', '.wmv', '.mov')
+
+def get_eye_video_paths() -> Iterator[pathlib.Path]:
+    for path in DATA_PATH.iterdir():
+        if not path.is_dir():
+            continue
+        if path.name == DLC_PROJECT_PATH.name:
+            continue
+        yield from (p for p in path.glob('*behavior*/*[eE]ye*') if p.suffix in VIDEO_SUFFIXES)
+            
+def get_dlc_output_path(
+    input_video_file_path: str | pathlib.Path, 
+    dlc_destfolder: str | pathlib.Path | None = None,
+):
+    return RESULTS_PATH / f"{input_video_file_path.stem}{DLC_LABEL}.h5"
 
 def fit(h5file_path, ellipse_file_path):
     print(h5file_path)
@@ -153,7 +180,7 @@ def make_test_ellipse(center=[1,1], width=1, height=.6, phi=3.14/5):
 def fit_ellipse(h5name, out_path):
 
     
-    df = pd.read_hdf(h5name).DeepCut_resnet50_universal_eye_trackingJul10shuffle1_1030000
+    df = getattr(pd.read_hdf(h5name), DLC_LABEL)
 
     l_threshold = 0.2
     min_num_points = 6
