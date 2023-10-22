@@ -1,2 +1,8 @@
 metadata_version: 1
-name: lims-eye-tracking-dlc
+name: aind-capsule-eye-tracking
+description: Port of the lims2 eye-tracking pipeline - outputs annotated points and ellipse fits for eye-perimeter, pupil and corneal reflection.
+authors:
+- name: Various contributors
+- name: Wayne Wakeman
+- name: Peter Lonnerberg
+- name: Ben Hardcastle

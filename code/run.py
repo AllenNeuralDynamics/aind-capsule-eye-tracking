@@ -26,7 +26,7 @@ if __name__ == "__main__":
         videos=[
           input_video_file_path.as_posix(),
         ],
-        output_dir_path=utils.RESULTS_PATH.as_posix(),
+        destfolder=utils.RESULTS_PATH.as_posix(),
     )
 
     # phase 2: fit ellipses to eye perimeter, pupil, and corneal reflection ------- #
