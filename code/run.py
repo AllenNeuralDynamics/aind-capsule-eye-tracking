@@ -42,7 +42,8 @@ if __name__ == "__main__":
         output_file_path=output_file_path,
     )
     
-    # qc: plot ellipses on example frames ----------------------------------------- #
+    # qc plots -------------------------------------------------------------------- #
+    # plot ellipses on example frames 
     NUM_FRAMES = 5
     QC_PATH = utils.RESULTS_PATH / "qc" 
     QC_PATH.mkdir(exist_ok=True, parents=True)
@@ -58,6 +59,17 @@ if __name__ == "__main__":
         )
         fig.savefig(
             QC_PATH / f"{input_video_file_path.stem}_{idx}.png",
+            dpi=300,
+            bbox_inches="tight",
+            pad_inches=0,
+        )
+    
+    # plot path of fitted pupil center
+    qc.plot_video_frame_with_pupil_path(
+        video_path=input_video_file_path,
+        pupil_ellipses=body_part_to_df['pupil'],
+        ).savefig(
+            QC_PATH / f"{input_video_file_path.stem}_pupil_path.png",
             dpi=300,
             bbox_inches="tight",
             pad_inches=0,
