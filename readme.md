@@ -25,8 +25,15 @@
 - output processed BehaviorSeries/Events to NWB.processing
 - store unobserved pupil frames (blinks or stress) in nwb
 - ? use rig info to compute gaze location on monitor
-- create asset from results
+- create asset from results automatically
 
 ## done
+- setup DLC env
+- get files and config from lims process
+- add DLC project to data asset
+- get DLC running
+- get ellipse-fitting running
+- parallelize ellipse-fitting to use all 16 cores
 - output random selection of video frames with annotated points + ellipses overlaid
 - compute pupil area timeseries
+
