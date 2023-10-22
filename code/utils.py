@@ -8,6 +8,7 @@ import functools
 from typing_extensions import TypeAlias
 import numpy as np
 import pandas as pd
+import cv2
 import tqdm
 
 DATA_PATH = pathlib.Path('/root/capsule/data/')
@@ -188,6 +189,15 @@ def fit_ellipse(data) -> Ellipse:
         phi=phi,
     )
 
+
+def get_video_data(video_path: str | pathlib.Path | cv2.VideoCapture) -> cv2.VideoCapture:
+    """Open video file as cv2.VideoCapture object."""
+    if isinstance(video_path, cv2.VideoCapture):
+        return video_path
+    return cv2.VideoCapture(str(video_path))
+
+def get_video_frame_count(video_path: str | pathlib.Path | cv2.VideoCapture) -> int:
+    return int(get_video_data(video_path).get(cv2.CAP_PROP_FRAME_COUNT))
 
 def make_test_ellipse(center=[1,1], width=1, height=.6, phi=3.14/5):
     """
