@@ -38,6 +38,7 @@ def plot_video_frame_with_ellipses(video_path: str | pathlib.Path | cv2.VideoCap
             ellipse = utils.Ellipse(ellipses.iloc[frame_index].to_dict())
         else:
             ellipse = ellipses[frame_index]
+        assert isinstance(ellipse, utils.Ellipse), f"Expected Ellipse, got {type(ellipse)=}"
         if np.isnan(ellipse.center_x):
             continue
         ax.add_patch(
