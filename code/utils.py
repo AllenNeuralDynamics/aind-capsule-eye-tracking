@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import pathlib
 from typing import Dict, Tuple, Iterator, NamedTuple, Literal
 import concurrent.futures
@@ -33,6 +34,10 @@ def get_eye_video_paths() -> Iterator[pathlib.Path]:
         )
     )
 
+def get_dlc_df(dlc_output_h5_path: str | pathlib.Path) -> pd.DataFrame:
+    # df has MultiIndex 
+    # TODO extract label from df
+    return getattr(pd.read_hdf(dlc_output_h5_path), DLC_SCORER_NAME) 
 
 def get_dlc_output_h5_path(
     input_video_file_path: str | pathlib.Path, 
@@ -50,9 +55,9 @@ class Ellipse(NamedTuple):
     center_x: np.floating = np.nan
     center_y: np.floating = np.nan
     width: np.floating = np.nan
-    """major axis"""
+    """semi-major axis"""
     height: np.floating = np.nan
-    """minor axis"""
+    """semi-minor axis"""
     phi: np.floating = np.nan
     """angle of counterclockwise rotation of major-axis in radians from x-axis"""
 
@@ -80,20 +85,24 @@ def get_ellipses_from_row(row: AnnotationData) -> dict[BodyPart, Ellipse]:
 
 def process_ellipses(dlc_output_h5_path: pathlib.Path, output_file_path: pathlib.Path) -> dict[BodyPart, pd.DataFrame]:
     output_file_path = pathlib.Path(output_file_path).with_suffix('.h5')
-    # df has MultiIndex 
-    # TODO extract label from df
-    df = getattr(pd.read_hdf(dlc_output_h5_path), DLC_SCORER_NAME) 
-
+    dlc_df = get_dlc_df(dlc_output_h5_path)
     future_to_index = {}
-    results = dict.fromkeys(DLC_LABELS, [None] * len(df))
+    results = {}
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        for idx, row in df.iterrows():
+        for idx, row in dlc_df.iterrows():
             future_to_index[
                 executor.submit(get_ellipses_from_row, row.to_dict())
             ] = idx 
-        for future in tqdm.tqdm(concurrent.futures.as_completed(future_to_index.keys())):
+        for future in tqdm.tqdm(
+                concurrent.futures.as_completed(future_to_index.keys()), 
+                desc='fitting',
+                unit='frames',
+                total=len(dlc_df),
+                ncols=79,
+                ascii=True, 
+            ):
             for body_part in DLC_LABELS:
-                results[body_part][future_to_index[future]] = future.result()[body_part]
+                results.setdefault(body_part, [None] * len(dlc_df))[future_to_index[future]] = future.result()[body_part]
 
     output_file_path.touch()
     body_part_to_df = {}
@@ -198,29 +207,3 @@ def get_video_data(video_path: str | pathlib.Path | cv2.VideoCapture) -> cv2.Vid
 
 def get_video_frame_count(video_path: str | pathlib.Path | cv2.VideoCapture) -> int:
     return int(get_video_data(video_path).get(cv2.CAP_PROP_FRAME_COUNT))
-
-def make_test_ellipse(center=[1,1], width=1, height=.6, phi=3.14/5):
-    """
-    Generate Elliptical data with noise
-    
-    Args
-    ----
-    center (list:float): (<x_location>, <y_location>)
-    width (float): semimajor axis. Horizontal dimension of the ellipse (**)
-    height (float): semiminor axis. Vertical dimension of the ellipse (**)
-    phi (float:radians): tilt of the ellipse, the angle the semimajor axis
-        makes with the x-axis 
-    Returns
-    -------
-    data (list:list:float): list of two lists containing the x and y data of the
-        ellipse. of the form [[x1, x2, ..., xi],[y1, y2, ..., yi]]
-    """
-    t = np.linspace(0, 2*np.pi, 1000)
-    x_noise, y_noise = np.random.rand(2, len(t))
-    
-    ellipse_x = center[0] + width*np.cos(t)*np.cos(phi)-height*np.sin(t)*np.sin(phi) + x_noise/2.
-    ellipse_y = center[1] + width*np.cos(t)*np.sin(phi)+height*np.sin(t)*np.cos(phi) + y_noise/2.
-
-    return [ellipse_x, ellipse_y]
-
-

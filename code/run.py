@@ -29,33 +29,35 @@ if __name__ == "__main__":
         ],
         destfolder=utils.RESULTS_PATH.as_posix(),
     )
+    dlc_output_h5_path = utils.get_dlc_output_h5_path(
+                input_video_file_path=input_video_file_path,
+                output_dir_path=utils.RESULTS_PATH,
+        )
 
     # phase 2: fit ellipses to eye perimeter, pupil, and corneal reflection ------- #
     output_file_path = utils.RESULTS_PATH / 'ellipses.h5'
     print(f"Writing ellipse fits: {output_file_path}")
     body_part_to_df = utils.process_ellipses(
-        dlc_output_h5_path=(
-            utils.get_dlc_output_h5_path(
-                input_video_file_path=input_video_file_path,
-                output_dir_path=utils.RESULTS_PATH,
-                )
-        ),
+        dlc_output_h5_path=dlc_output_h5_path,
         output_file_path=output_file_path,
     )
     
     # qc: plot ellipses on example frames ----------------------------------------- #
     NUM_FRAMES = 5
-    print(f"Writing {NUM_FRAMES} example frames")
+    QC_PATH = utils.RESULTS_PATH / "qc" 
+    QC_PATH.mkdir(exist_ok=True, parents=True)
+    print(f"Writing {NUM_FRAMES} example frames to {QC_PATH}")
     total_frames = utils.get_video_frame_count(input_video_file_path)
-    step = total_frames // NUM_FRAMES + 2 # avoid frames at the very start/end
-    for idx in range(step, total_frames - step, step):
+    step = total_frames // NUM_FRAMES + 1
+    for idx in range(step//2, total_frames, step): # avoid frames at the very start/end
         fig = qc.plot_video_frame_with_ellipses(
             video_path=input_video_file_path,
             all_ellipses=body_part_to_df,
             frame_index=idx,
+            dlc_output_h5_path=dlc_output_h5_path,
         )
         fig.savefig(
-            utils.RESULTS_PATH / "qc" / f"{input_video_file_path.stem}_{idx}.png",
+            QC_PATH / f"{input_video_file_path.stem}_{idx}.png",
             dpi=300,
             bbox_inches="tight",
             pad_inches=0,
