@@ -36,7 +36,7 @@ if __name__ == "__main__":
         dlc_output_h5_path=(
             utils.get_dlc_output_h5_path(
                 input_video_file_path=input_video_file_path,
-                output_dir_path=utils.DATA_PATH,
+                output_dir_path=utils.RESULTS_PATH,
                 )
         ),
         output_file_path=output_file_path,
