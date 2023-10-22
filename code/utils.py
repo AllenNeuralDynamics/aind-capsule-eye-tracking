@@ -15,12 +15,13 @@ DLC_LABEL = 'DeepCut_resnet50_universal_eye_trackingJul10shuffle1_1030000'
 VIDEO_SUFFIXES = ('.mp4', '.avi', '.wmv', '.mov')
 
 def get_eye_video_paths() -> Iterator[pathlib.Path]:
-    for path in DATA_PATH.iterdir():
-        if not path.is_dir():
-            continue
-        if path.name == DLC_PROJECT_PATH.name:
-            continue
-        yield from (p for p in path.glob('*behavior*/*[eE]ye*') if p.suffix in VIDEO_SUFFIXES)
+    yield from (
+        p for p in DATA_PATH.rglob('*[eE]ye*') 
+        if (
+            DLC_PROJECT_PATH not in p.parents
+            and p.suffix in VIDEO_SUFFIXES
+        )
+    )
             
 def get_dlc_output_path(
     input_video_file_path: str | pathlib.Path, 
