@@ -43,10 +43,12 @@ if __name__ == "__main__":
     )
     
     # qc plots -------------------------------------------------------------------- #
-    # plot ellipses on example frames 
-    NUM_FRAMES = 5
+
     QC_PATH = utils.RESULTS_PATH / "qc" 
     QC_PATH.mkdir(exist_ok=True, parents=True)
+
+    # plot ellipses on example frames 
+    NUM_FRAMES = 5
     print(f"Writing {NUM_FRAMES} example frames to {QC_PATH}")
     total_frames = utils.get_video_frame_count(input_video_file_path)
     step = total_frames // NUM_FRAMES + 1
@@ -64,7 +66,8 @@ if __name__ == "__main__":
             pad_inches=0,
         )
     
-    # plot path of fitted pupil center
+    # plot path of fitted pupil
+    print(f"Writing example frame with path of pupil center to {QC_PATH}")
     qc.plot_video_frame_with_pupil_path(
         video_path=input_video_file_path,
         pupil_ellipses=body_part_to_df['pupil'],
