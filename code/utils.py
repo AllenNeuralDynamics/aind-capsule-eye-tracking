@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import pathlib
-from typing import Dict, Tuple, Iterator, NamedTuple, Literal
+from typing import Dict, Tuple, Iterator, Iterable, NamedTuple, Literal
 import concurrent.futures
 import functools
 
@@ -207,3 +207,40 @@ def get_video_data(video_path: str | pathlib.Path | cv2.VideoCapture) -> cv2.Vid
 
 def get_video_frame_count(video_path: str | pathlib.Path | cv2.VideoCapture) -> int:
     return int(get_video_data(video_path).get(cv2.CAP_PROP_FRAME_COUNT))
+
+def get_pupil_area_pixels(
+    pupil_ellipses: Iterable[utils.Ellipse] | pd.DataFrame, 
+    ) -> pd.Series:
+    if not isinstance(pupil_ellipses, pd.DataFrame):
+        pupil_ellipses = pd.DataFrame.from_records(pupil_ellipses, columns=Ellipse._fields)
+    return compute_circular_areas(pupil_ellipses)
+
+def compute_circular_areas(ellipse_params: pd.DataFrame) -> pd.Series:
+    """Compute circular area of a pupil using half-major axis.
+    
+    Copied verbatim from allensdk.brain_observatory.gaze_mapping._gaze_mapper
+    - temp use for getting pupil area: will add whole sdk soon
+    - output is in pixel^2 and assumes square pixels
+
+    Assume the pupil is a circle, and that as it moves off-axis
+    with the camera, the observed ellipse semi-major axis remains the
+    radius of the circle.
+
+    Parameters
+    ----------
+    ellipse_params (pandas.DataFrame): A table of pupil parameters consisting
+        of 5 columns: ("center_x", "center_y", "height", "phi", "width")
+        and n-row timepoints.
+
+        NOTE: For ellipse_params produced by the Deep Lab Cut pipeline,
+        "width" and "height" columns, in fact, refer to the
+        "half-width" and "half-height".
+
+    Returns
+    -------
+        pandas.Series: A series of pupil areas for n-timepoints.
+    """
+    # Take the biggest value between height and width columns and
+    # assume that it is the pupil circle radius.
+    radii = ellipse_params[["height", "width"]].max(axis=1)
+    return np.pi * radii * radii

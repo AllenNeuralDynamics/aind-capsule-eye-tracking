@@ -63,6 +63,18 @@ def plot_video_frame_with_pupil_path(
     ax.set_title('center of pupil ellipse path across all frames', fontsize=8)
     return fig
 
+def plot_pupil_area(
+    pupil_ellipses: Iterable[utils.Ellipse] | pd.DataFrame, 
+    ) -> plt.Figure:
+    fig = plt.figure()
+    plt.plot(utils.get_pupil_area_pixels(pupil_ellipses), color=ELLIPSE_COLORS['pupil'])
+    ax = plt.gca()
+    ax.set_ylim((0, ax.get_ylim()[-1]))
+    ax.set_xlabel('frame index')
+    ax.set_ylabel('pupil area (pixels$^2$)')
+    plt.tight_layout()
+    return fig
+
 def plot_video_frame_with_ellipses(
     video_path: str | pathlib.Path | cv2.VideoCapture, 
     all_ellipses: dict[utils.BodyPart, Sequence[utils.Ellipse] | pd.DataFrame], 

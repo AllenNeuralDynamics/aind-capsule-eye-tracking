@@ -74,3 +74,14 @@ if __name__ == "__main__":
             bbox_inches="tight",
             pad_inches=0,
         )
+
+    # plot path of fitted pupil
+    print(f"Writing plot of pupil area to {QC_PATH}")
+    qc.plot_pupil_area(
+        pupil_ellipses=body_part_to_df['pupil'],
+        ).savefig(
+            QC_PATH / f"{input_video_file_path.stem}_pupil_area.png",
+            dpi=300,
+            bbox_inches="tight",
+            pad_inches=0,
+        )
