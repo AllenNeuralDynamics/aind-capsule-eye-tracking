@@ -19,10 +19,14 @@
 
 ## TODO
 - fix startup warnings
-- output random selection of video frames with annotated points + ellipses overlaid
-- compute pupil area timeseries
-- store unobserved pupil frames (blinks or stress)
+- read rig.json for parameters
+  - check for pixel^2 -> cm^2 conversion
 - ? output DLC annotation timeseries to NWB.acquisition
 - output processed BehaviorSeries/Events to NWB.processing
+- store unobserved pupil frames (blinks or stress) in nwb
 - ? use rig info to compute gaze location on monitor
 - create asset from results
+
+## done
+- output random selection of video frames with annotated points + ellipses overlaid
+- compute pupil area timeseries

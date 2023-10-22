@@ -60,7 +60,7 @@ def plot_video_frame_with_pupil_path(
     else:
         xy = ((e.center_x for e in pupil_ellipses), (e.center_y for e in pupil_ellipses))
     ax.plot(*xy, color=ELLIPSE_COLORS['pupil'], linewidth=.4, alpha=.5)
-    ax.set_title('center of pupil ellipse path across all frames', fontsize=8)
+    ax.set_title('path of estimated pupil center across all frames', fontsize=8)
     return fig
 
 def plot_pupil_area(
