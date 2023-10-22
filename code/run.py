@@ -17,7 +17,7 @@ if __name__ == "__main__":
         utils.get_eye_video_paths()
         )
     print(f"Reading video: {input_video_file_path}")
-    """
+    
     # phase 1: track points in video and generate h5 file ------------------------- #
     print(f"Writing DLC analysis: {utils.RESULTS_PATH}")
     
@@ -26,20 +26,18 @@ if __name__ == "__main__":
         videos=[
           input_video_file_path.as_posix(),
         ],
-        destfolder=utils.RESULTS_PATH.as_posix(),
+        output_dir_path=utils.RESULTS_PATH.as_posix(),
     )
-    """
 
     # phase 2: fit ellipses to eye perimeter, pupil, and corneal reflection ------- #
-    ellipse_output_file_path = utils.RESULTS_PATH / 'ellipse.h5'
-    print(f"Writing ellipse fits: {ellipse_output_file_path}")
+    output_file_path = utils.RESULTS_PATH / 'ellipses.h5'
+    print(f"Writing ellipse fits: {output_file_path}")
     utils.process_ellipses(
-        h5file_path=(
-            utils.get_dlc_output_path(
+        dlc_output_h5_path=(
+            utils.get_dlc_output_h5_path(
                 input_video_file_path=input_video_file_path,
-                dlc_destfolder=utils.DATA_PATH,
+                output_dir_path=utils.DATA_PATH,
                 )
-            .as_posix()
         ),
-        ellipse_file_path=ellipse_output_file_path.as_posix(),
+        output_file_path=output_file_path,
     )

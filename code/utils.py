@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import pathlib
-from typing import Iterator, NamedTuple
-from concurrent.futures import ProcessPoolExecutor, Future, as_completed
+from typing import Dict, Tuple, Iterator, NamedTuple, Literal
+import concurrent.futures
 import functools
 
+from typing_extensions import TypeAlias
 import numpy as np
 import pandas as pd
+import tqdm
 
 DATA_PATH = pathlib.Path('/root/capsule/data/')
 RESULTS_PATH = pathlib.Path('/root/capsule/results/')
@@ -18,6 +20,7 @@ DLC_LABELS = ('cr', 'eye', 'pupil')
 
 VIDEO_SUFFIXES = ('.mp4', '.avi', '.wmv', '.mov')
 
+BodyPart: TypeAlias = Literal['cr', 'eye', 'pupil']
 
 def get_eye_video_paths() -> Iterator[pathlib.Path]:
     yield from (
@@ -27,14 +30,14 @@ def get_eye_video_paths() -> Iterator[pathlib.Path]:
             and p.suffix in VIDEO_SUFFIXES
         )
     )
-  
-            
-def get_dlc_output_path(
+
+
+def get_dlc_output_h5_path(
     input_video_file_path: str | pathlib.Path, 
-    dlc_destfolder: str | pathlib.Path = RESULTS_PATH,
+    output_dir_path: str | pathlib.Path = RESULTS_PATH,
 ):
     return next(
-        pathlib.Path(dlc_destfolder)
+        pathlib.Path(output_dir_path)
         .rglob(
             f"{pathlib.Path(input_video_file_path).stem}*.h5"
         )
@@ -51,8 +54,8 @@ class Ellipse(NamedTuple):
 
 
 def fit_ellipse(data) -> Ellipse:
-
     """Lest Squares fitting algorithm 
+    
     Theory taken from (*)
     Solving equation Sa=lCa. with a = |a b c d f g> and a1 = |a b c> 
         a2 = |d f g>
@@ -64,6 +67,9 @@ def fit_ellipse(data) -> Ellipse:
     ------
     coef (list): list of the coefficients describing an ellipse
         [a,b,c,d,f,g] corresponding to ax**2+2bxy+cy**2+2dx+2fy+g
+
+    uses https://github.com/bdhammel/least-squares-ellipse-fitting
+    * based on the publication Halir, R., Flusser, J.: 'Numerically Stable Direct Least Squares Fitting of Ellipses'
     """
     x, y = np.asarray(data, dtype=float)
     #PL introduced weights!
@@ -169,50 +175,58 @@ def make_test_ellipse(center=[1,1], width=1, height=.6, phi=3.14/5):
 
     return [ellipse_x, ellipse_y]
 
-#ellipse fitting method
-    
-def get_ellipses_from_row(row) -> dict[Literal['cr', 'eye', 'pupil'], Ellipse]:
+#TODO make plot fn (provide video frame, draw ellipse, annotations)
 
-    l_threshold = 0.2
-    min_num_points = 6
+Annotation: TypeAlias = Literal['x', 'y', 'likelihood']
 
-    # uses https://github.com/bdhammel/least-squares-ellipse-fitting
-    # based on the publication Halir, R., Flusser, J.: 'Numerically Stable Direct Least Squares Fitting of Ellipses'
+AnnotationData: TypeAlias = Dict[Tuple[BodyPart, Annotation], float]
+
+def get_values_from_row(row: AnnotationData, annotation: Annotation, body_part: BodyPart) -> np.array:
+    return np.array([v for k, v in row.items() if k[1] == annotation and body_part in k[0]])
+
+def get_ellipses_from_row(row: AnnotationData) -> dict[BodyPart, Ellipse]:
+    likelihood_threshold = 0.2
+    min_num_points = 6                  # at least 6 tracked points for annotation quality data
 
     out = dict()
-    for label in DLC_LABELS:
-
-        x_data = row.filter(regex=(f"{label}*")).values[0::3]
-        y_data = row.filter(regex=(f"{label}*")).values[1::3]
-        l = row.filter(regex=(f"{label}*")).values[2::3]
-        
-        ellipse = Ellipse() # default nan values 
-        if len(l[l>l_threshold]) >= min_num_points: #at least 6 tracked points for annotation quality data
+    for body_part in DLC_LABELS:
+        arrays = {annotation: get_values_from_row(row, annotation, body_part) for annotation in ('x', 'y', 'likelihood')}
+        ellipse = Ellipse() # default nan values
+        likely = arrays["likelihood"] > likelihood_threshold
+        if len(arrays["likelihood"][likely]) >= min_num_points: 
             try:
-                ellipse = fit_ellipse([x_data[l>l_threshold], y_data[l>l_threshold]])
+                ellipse = fit_ellipse([arrays["x"][likely], arrays["y"][likely]])
             except Exception as e:
                 print(e) 
-        out[label] = ellipse
+        out[body_part] = ellipse
     return out
 
 
-def process_ellipses(h5name, out_path):
-
+def process_ellipses(dlc_output_h5_path: pathlib.Path, output_file_path: pathlib.Path) -> dict[BodyPart, pd.DataFrame]:
+    output_file_path = pathlib.Path(output_file_path).with_suffix('.h5')
     # df has MultiIndex 
     # TODO extract label from df
-    df = getattr(pd.read_hdf(h5name), DLC_SCORER_NAME) 
+    df = getattr(pd.read_hdf(dlc_output_h5_path), DLC_SCORER_NAME) 
 
-    results = dict.fromkeys(DLC_LABELS, value=list())
-    with ProcessPoolExecutor() as executor:
-        for idx, ellipses in enumerate(executor.map(get_ellipses_from_row, functools.partial(df.itertuples, index=False))):
-            for label in DLC_LABELS:
-                results[label][idx] = ellipses[label]
+    future_to_index = {}
+    results = dict.fromkeys(DLC_LABELS, [None] * len(df))
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        for idx, row in df.iterrows():
+            future_to_index[
+                executor.submit(get_ellipses_from_row, row.to_dict())
+            ] = idx 
+        for future in tqdm.tqdm(concurrent.futures.as_completed(future_to_index.keys())):
+            for body_part in DLC_LABELS:
+                results[body_part][future_to_index[future]] = future.result()[body_part]
 
-    ellipse_file_path = out_path 
-    for label in DLC_LABELS:
-        pd.DataFrame(results[label]).to_hdf(ellipse_file_path, key=label, mode='w')       
+    output_file_path.touch()
+    body_part_to_df = {}
+    for body_part in DLC_LABELS:
+        df = pd.DataFrame.from_records(results[body_part], columns=Ellipse._fields)
+        body_part_to_df[body_part] = df
+        df.to_hdf(output_file_path, key=body_part, mode='a')       
       
-    return results
+    return body_part_to_df
 
 
 
