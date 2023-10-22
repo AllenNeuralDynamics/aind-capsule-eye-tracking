@@ -1,4 +1,4 @@
-# hash:sha256:f457b03ae810f340a5cf0b18c81e56ac474660f127df727fbe294b72914d48e8
+# hash:sha256:2e69446f758a1f7be8b1e631f4c1294746ff2be1fde62662e63c6a3f918d5435
 FROM registry.codeocean.allenneuraldynamics.org/codeocean/miniconda3:4.9.2-cuda11.7.0-cudnn8-ubuntu20.04
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -21,3 +21,10 @@ RUN conda install -y \
 RUN pip install -U --no-cache-dir \
     deeplabcut[tf]==2.3.6 \
     moviepy==1.0.3
+
+ADD "https://github.com/coder/code-server/releases/download/v4.9.0/code-server-4.9.0-linux-amd64.tar.gz" /.code-server/code-server.tar.gz
+	
+RUN cd /.code-server \
+	&& tar -xvf code-server.tar.gz \
+	&& rm code-server.tar.gz \
+	&& ln -s /.code-server/code-server-4.9.0-linux-amd64/bin/code-server  /usr/bin/code-server
