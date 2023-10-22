@@ -8,6 +8,7 @@ https://codeocean.allenneuraldynamics.org/data-assets/05529cfc-23fe-4ead-9490-71
 - runs on first video file found in **`data/`** with **`eye`** in the filename (recursive glob, case-insensitive)
 
 ## TODO
+- output random selection of video frames with annotated points + ellipses overlaid
 - compute pupil area timeseries
 - store unobserved pupil frames (blinks or stress)
 - ? output DLC annotation timeseries to NWB.acquisition
