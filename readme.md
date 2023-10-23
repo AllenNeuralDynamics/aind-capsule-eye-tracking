@@ -18,6 +18,7 @@
 - source code for **`deeplabcut.analyze_videos()`**: https://github.com/DeepLabCut/DeepLabCut/blob/main/deeplabcut/pose_estimation_tensorflow/predict_videos.py#L268
 
 ## TODO
+- fix index error (0 out of bounds, axis 1)
 - fix startup warnings
 - read rig.json for parameters
   - check for pixel^2 -> cm^2 conversion
