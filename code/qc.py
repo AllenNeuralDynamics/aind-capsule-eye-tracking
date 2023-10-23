@@ -66,13 +66,12 @@ def plot_video_frame_with_pupil_path(
 def plot_pupil_area(
     pupil_ellipses: Iterable[utils.Ellipse] | pd.DataFrame, 
     ) -> plt.Figure:
-    fig = plt.figure()
+    fig = plt.figure(figsize=(6,2))
     plt.plot(utils.get_pupil_area_pixels(pupil_ellipses), color=ELLIPSE_COLORS['pupil'])
     ax = plt.gca()
     ax.set_ylim((0, ax.get_ylim()[-1]))
     ax.set_xlabel('frame index')
     ax.set_ylabel('pupil area (pixels$^2$)')
-    plt.tight_layout()
     return fig
 
 def plot_video_frame_with_ellipses(
