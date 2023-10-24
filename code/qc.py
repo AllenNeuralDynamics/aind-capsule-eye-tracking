@@ -21,7 +21,7 @@ ELLIPSE_COLORS = POINT_COLORS = {
 def plot_video_frame(
     video_path: str | pathlib.Path | cv2.VideoCapture, 
     frame_index: int | None = None,
-) -> tuple[plt.Figure, plt.Axes]:
+) -> plt.Figure:
     v = utils.get_video_data(video_path)
     v.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
     _, frame = v.read()
@@ -47,14 +47,15 @@ def plot_video_frame(
         ), 
         fontsize=8,
     )
-    return fig, ax
+    return fig
 
 def plot_video_frame_with_pupil_path(
     video_path: str | pathlib.Path | cv2.VideoCapture, 
     pupil_ellipses: Sequence[utils.Ellipse] | pd.DataFrame, 
     ) -> plt.Figure:
     frame_index = random.randint(0, utils.get_video_frame_count(video_path))
-    fig, ax = plot_video_frame(video_path, frame_index)
+    fig = plot_video_frame(video_path, frame_index)
+    ax = fig.axes[0]
     if isinstance(pupil_ellipses, pd.DataFrame):
         xy = pupil_ellipses[['center_x', 'center_y']].to_numpy().T
     else:
@@ -84,10 +85,10 @@ def plot_video_frame_with_dlc_points(
     if frame_index is None:
         frame_index = random.randint(0, utils.get_video_frame_count(v))
     dlc_df = utils.get_dlc_df(dlc_output_h5_path)
-    fig, ax = plot_video_frame(video_path, frame_index)
+    fig = plot_video_frame(video_path, frame_index)
     for body_part in utils.DLC_LABELS:
         xy = [utils.get_values_from_row(dlc_df.iloc[frame_index], annotation, body_part) for annotation in ('x', 'y')]
-        plt.plot(*xy, "+", color=POINT_COLORS[body_part], markersize=1, alpha=1)
+        fig.axes[0].plot(*xy, "+", color=POINT_COLORS[body_part], markersize=1, alpha=1)
     return fig
 
 def plot_video_frame_with_ellipses(
@@ -108,9 +109,8 @@ def plot_video_frame_with_ellipses(
             dlc_output_h5_path=dlc_output_h5_path,
             frame_index=frame_index,
         )
-        fig.axes[0]
     else:
-        fig, ax = plot_video_frame(video_path, frame_index)
+        fig = plot_video_frame(video_path, frame_index)
 
     for body_part, ellipses in all_ellipses.items():
 
@@ -121,7 +121,7 @@ def plot_video_frame_with_ellipses(
         assert isinstance(ellipse, utils.Ellipse), f"Expected Ellipse, got {type(ellipse)=}"
 
         if not np.isnan(ellipse.center_x):
-            ax.add_patch(
+            fig.axes[0].add_patch(
                 matplotlib.patches.Ellipse(
                     xy=(ellipse.center_x, ellipse.center_y),
                     width=2*ellipse.width,

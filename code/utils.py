@@ -46,13 +46,16 @@ def get_dlc_output_h5_path(
     input_video_file_path: str | pathlib.Path, 
     output_dir_path: str | pathlib.Path = RESULTS_PATH,
 ):
-    return next(
+    output = next(
         pathlib.Path(output_dir_path)
         .rglob(
-            f"{pathlib.Path(input_video_file_path).stem}*.h5"
-        )
+            glob := f"{pathlib.Path(input_video_file_path).stem}*.h5"
+        ),
+        None
     )
-
+    if output is None:
+        raise FileNotFoundError(f"No file matching {glob} in {output_dir_path}")
+    return output
 
 class Ellipse(NamedTuple):
     center_x: np.floating = np.nan

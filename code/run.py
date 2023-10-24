@@ -13,7 +13,7 @@ import tensorflow as tf
 import utils
 import qc
 
-REUSE_DLC_OUTPUT_H5_IN_ASSET = True
+REUSE_DLC_OUTPUT_H5_IN_ASSET = False
 """Instead of re-generating DLC h5 file, use one in a data asset"""
  
 if __name__ == "__main__":
@@ -25,7 +25,6 @@ if __name__ == "__main__":
     print(f"Reading video: {input_video_file_path}")
     
     # phase 1: track points in video and generate h5 file ------------------------- #
-    print(f"Writing DLC analysis: {utils.RESULTS_PATH}")
 
     if REUSE_DLC_OUTPUT_H5_IN_ASSET:
         # get existing h5 file from data/ 
@@ -33,13 +32,16 @@ if __name__ == "__main__":
             input_video_file_path=input_video_file_path,
             output_dir_path=utils.DATA_PATH,
         ) 
+        print(f"{REUSE_DLC_OUTPUT_H5_IN_ASSET=}: using {existing_h5}")
         # - a pickle file exists too
         # - copy everything with matching filename component to results/
+        temp_files = []
         for file in existing_h5.parent.glob(f"{existing_h5.stem}*"):
-            dest = utils.RESULTS_PATH / file.name
-            dest.write_bytes(file.read_bytes())
+            temp_files.append(dest := utils.RESULTS_PATH / file.name)
+            dest.symlink_to(file.read_bytes())
         # no need to skip DLC - it will see the existing h5 and skip itself
  
+    print(f"Writing DLC analysis: {utils.RESULTS_PATH}")
     deeplabcut.analyze_videos(
         config=utils.DLC_PROJECT_PATH / 'config.yaml',
         videos=[
@@ -71,13 +73,12 @@ if __name__ == "__main__":
     total_frames = utils.get_video_frame_count(input_video_file_path)
     step = total_frames // NUM_FRAMES + 1
     for idx in range(step//2, total_frames, step): # avoid frames at the very start/end
-        fig = qc.plot_video_frame_with_ellipses(
+        qc.plot_video_frame_with_ellipses(
             video_path=input_video_file_path,
             all_ellipses=body_part_to_df,
             frame_index=idx,
             dlc_output_h5_path=dlc_output_h5_path,
-        )
-        fig.savefig(
+        ).savefig(
             QC_PATH / f"{input_video_file_path.stem}_{idx}.png",
             dpi=300,
             bbox_inches="tight",
@@ -113,7 +114,7 @@ if __name__ == "__main__":
     total_frames = utils.get_video_frame_count(input_video_file_path)
     folder = QC_PATH / "failed_ellipse_fits"
     for body_part, df in body_part_to_df.items():
-        frames_without_ellipses = pd.isnull(df).nonzero()[0]
+        frames_without_ellipses = np.where(pd.isnull(df.center_x).index)[0]
         if (num_frames := len(frames_without_ellipses)) == 0:
             continue
         json_path = folder / f"{body_part}.json"
@@ -122,7 +123,7 @@ if __name__ == "__main__":
         print(f"\t- writing frame numbers to {json_path}")
         json_path.write_text(
             json.dumps(
-                dict(frames_without_ellipses=list(frames_without_ellipses)),
+                dict(frames_without_ellipses=frames_without_ellipses.tolist()),
                 indent=4,
                 )
             )
@@ -141,3 +142,6 @@ if __name__ == "__main__":
                 pad_inches=0,
             )
         
+    if REUSE_DLC_OUTPUT_H5_IN_ASSET:
+        for file in temp_files:
+            file.unlink()
