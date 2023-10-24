@@ -25,6 +25,9 @@ BodyPart: TypeAlias = Literal['cr', 'eye', 'pupil']
 Annotation: TypeAlias = Literal['x', 'y', 'likelihood']
 AnnotationData: TypeAlias = Dict[Tuple[BodyPart, Annotation], float]
 
+MIN_LIKELIHOOD_THRESHOLD = 0.2
+MIN_NUM_POINTS_FOR_ELLIPSE_FITTING = 6 # at least 6 tracked points for annotation quality data
+
 def get_eye_video_paths() -> Iterator[pathlib.Path]:
     yield from (
         p for p in DATA_PATH.rglob('*[eE]ye*') 
@@ -66,15 +69,12 @@ def get_values_from_row(row: AnnotationData, annotation: Annotation, body_part: 
     return np.array([v for k, v in row.items() if k[1] == annotation and body_part in k[0]])
 
 def get_ellipses_from_row(row: AnnotationData) -> dict[BodyPart, Ellipse]:
-    likelihood_threshold = 0.2
-    min_num_points = 6                  # at least 6 tracked points for annotation quality data
-
     out = dict()
     for body_part in DLC_LABELS:
         arrays = {annotation: get_values_from_row(row, annotation, body_part) for annotation in ('x', 'y', 'likelihood')}
         ellipse = Ellipse() # default nan values
-        likely = arrays["likelihood"] > likelihood_threshold
-        if len(arrays["likelihood"][likely]) >= min_num_points: 
+        likely = arrays["likelihood"] > MIN_LIKELIHOOD_THRESHOLD
+        if len(arrays["likelihood"][likely]) >= MIN_NUM_POINTS_FOR_ELLIPSE_FITTING: 
             try:
                 ellipse = fit_ellipse([arrays["x"][likely], arrays["y"][likely]])
             except Exception as e:

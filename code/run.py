@@ -88,3 +88,6 @@ if __name__ == "__main__":
             bbox_inches="tight",
             pad_inches=0,
         )
+
+    # plot any frames that didn't meet criteria for fitting
+    print("Writing 
