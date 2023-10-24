@@ -47,7 +47,7 @@ if __name__ == "__main__":
     QC_PATH = utils.RESULTS_PATH / "qc" 
     QC_PATH.mkdir(exist_ok=True, parents=True)
 
-    # plot ellipses on example frames 
+    # example frames with ellipses drawn 
     NUM_FRAMES = 5
     print(f"Writing {NUM_FRAMES} example frames to {QC_PATH}")
     total_frames = utils.get_video_frame_count(input_video_file_path)
@@ -66,7 +66,7 @@ if __name__ == "__main__":
             pad_inches=0,
         )
     
-    # plot path of fitted pupil
+    # path of fitted pupil on a frame
     print(f"Writing example frame with path of pupil center to {QC_PATH}")
     qc.plot_video_frame_with_pupil_path(
         video_path=input_video_file_path,
@@ -78,7 +78,7 @@ if __name__ == "__main__":
             pad_inches=0,
         )
 
-    # plot path of fitted pupil
+    # pupil area timeseries
     print(f"Writing plot of pupil area to {QC_PATH}")
     qc.plot_pupil_area(
         pupil_ellipses=body_part_to_df['pupil'],
@@ -89,5 +89,24 @@ if __name__ == "__main__":
             pad_inches=0,
         )
 
-    # plot any frames that didn't meet criteria for fitting
-    print("Writing 
+    # frames that didn't meet criteria for fitting
+    NUM_FRAMES_PER_ELLIPSE = 5
+    print(f"Writing sets of up to {NUM_FRAMES_PER_ELLIPSE} frames that didn't meet criteria for fitting each ellipse")
+    total_frames = utils.get_video_frame_count(input_video_file_path)
+    for body_part, df in body_part_to_df.items():
+        folder = QC_PATH / body_part
+        folder.mkdir(exist_ok=True, parents=True)
+        frames_without_ellipses = 
+            fig = qc.plot_video_frame_with_ellipses(
+                    video_path=input_video_file_path,
+                all_ellipses=body_part_to_df,
+                frame_index=idx,
+                dlc_output_h5_path=dlc_output_h5_path,
+            )
+            fig.savefig(
+                QC_PATH / f"{input_video_file_path.stem}_{idx}.png",
+                dpi=300,
+                bbox_inches="tight",
+                pad_inches=0,
+            )
+        
