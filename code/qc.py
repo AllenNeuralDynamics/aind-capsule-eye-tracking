@@ -74,11 +74,27 @@ def plot_pupil_area(
     ax.set_ylabel('pupil area (pixels$^2$)')
     return fig
 
+def plot_video_frame_with_dlc_points(
+    video_path: str | pathlib.Path | cv2.VideoCapture, 
+    dlc_output_h5_path: str | pathlib.Path,
+    frame_index: int | None = None,
+    ) -> plt.Figure:
+    """Single frame with eye, pupil and corneal reflection DLC points overlaid.
+    """
+    if frame_index is None:
+        frame_index = random.randint(0, utils.get_video_frame_count(v))
+    dlc_df = utils.get_dlc_df(dlc_output_h5_path)
+    fig, ax = plot_video_frame(video_path, frame_index)
+    for body_part in utils.DLC_LABELS:
+        xy = [utils.get_values_from_row(dlc_df.iloc[frame_index], annotation, body_part) for annotation in ('x', 'y')]
+        plt.plot(*xy, "+", color=POINT_COLORS[body_part], markersize=1, alpha=1)
+    return fig
+
 def plot_video_frame_with_ellipses(
     video_path: str | pathlib.Path | cv2.VideoCapture, 
     all_ellipses: dict[utils.BodyPart, Sequence[utils.Ellipse] | pd.DataFrame], 
-    frame_index: int | None = None,
     dlc_output_h5_path: str | pathlib.Path | None = None,
+    frame_index: int | None = None,
     ) -> plt.Figure:
     """Single frame with eye, pupil and corneal reflection ellipses drawn.
     Adds individual points from DLC analysis, if h5 path provided.
@@ -86,7 +102,16 @@ def plot_video_frame_with_ellipses(
     if frame_index is None:
         frame_index = random.randint(0, utils.get_video_frame_count(v))
     dlc_df = None if dlc_output_h5_path is None else utils.get_dlc_df(dlc_output_h5_path)
-    fig, ax = plot_video_frame(video_path, frame_index)
+    if dlc_df is not None:
+        fig = plot_video_frame_with_dlc_points(
+            video_path=video_path,
+            dlc_output_h5_path=dlc_output_h5_path,
+            frame_index=frame_index,
+        )
+        fig.axes[0]
+    else:
+        fig, ax = plot_video_frame(video_path, frame_index)
+
     for body_part, ellipses in all_ellipses.items():
 
         if isinstance(ellipses, pd.DataFrame):
@@ -108,11 +133,6 @@ def plot_video_frame_with_ellipses(
                     alpha=.8,
                 )
             )
-
-        if dlc_df is not None:
-            xy = [utils.get_values_from_row(dlc_df.iloc[frame_index], annotation, body_part) for annotation in ('x', 'y')]
-            plt.plot(*xy, "+", color=POINT_COLORS[body_part], markersize=1, alpha=1)
-
     return fig
 
 

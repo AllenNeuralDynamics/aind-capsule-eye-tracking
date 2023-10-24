@@ -1,6 +1,8 @@
+import json
 import os
 import sys
 import pathlib
+import random
 
 os.environ["DLClight"]="True" # set before importing DLC
 import deeplabcut
@@ -91,20 +93,33 @@ if __name__ == "__main__":
 
     # frames that didn't meet criteria for fitting
     NUM_FRAMES_PER_ELLIPSE = 5
-    print(f"Writing sets of up to {NUM_FRAMES_PER_ELLIPSE} frames that didn't meet criteria for fitting each ellipse")
+    print(f"Writing sets of up to {NUM_FRAMES_PER_ELLIPSE} frames that didn't meet criteria for fitting each ellipse type")
     total_frames = utils.get_video_frame_count(input_video_file_path)
+    folder = QC_PATH / "failed_ellipse_fits"
     for body_part, df in body_part_to_df.items():
-        folder = QC_PATH / body_part
+        frames_without_ellipses = pd.isnull(df).nonzero()[0]
+        if (num_frames := len(frames_without_ellipses)) == 0:
+            continue
+        json_path = folder / f"{body_part}.json"
+        print(f"\t- failed to fit {body_part} ellipses for {num_frames} frames")
         folder.mkdir(exist_ok=True, parents=True)
-        frames_without_ellipses = 
-            fig = qc.plot_video_frame_with_ellipses(
-                    video_path=input_video_file_path,
-                all_ellipses=body_part_to_df,
-                frame_index=idx,
-                dlc_output_h5_path=dlc_output_h5_path,
+        print(f"\t- writing frame numbers to {json_path}")
+        json_path.write_text(
+            json.dumps(
+                dict(frames_without_ellipses=list(frames_without_ellipses)),
+                indent=4,
+                )
             )
+        frames_without_ellipses = random.shuffle(frames_without_ellipses)
+        for idx in range(min(num_frames, NUM_FRAMES_PER_ELLIPSE)):
+            fig = qc.plot_video_frame_with_dlc_points(
+                video_path=input_video_file_path,
+                dlc_output_h5_path=dlc_output_h5_path,
+                frame_index=frames_without_ellipses[idx],
+            )
+            fig.suptitle(f"did not meet criteria for ellipse-fitting of {body_part}")
             fig.savefig(
-                QC_PATH / f"{input_video_file_path.stem}_{idx}.png",
+                folder / f"{input_video_file_path.stem}_{frames_without_ellipses[idx]}.png",
                 dpi=300,
                 bbox_inches="tight",
                 pad_inches=0,
