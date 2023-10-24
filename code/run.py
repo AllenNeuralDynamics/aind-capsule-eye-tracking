@@ -13,6 +13,9 @@ import tensorflow as tf
 import utils
 import qc
 
+REUSE_DLC_OUTPUT_H5_IN_ASSET = True
+"""Instead of re-generating DLC h5 file, use one in a data asset"""
+ 
 if __name__ == "__main__":
 
     # process first eye video found
@@ -23,7 +26,20 @@ if __name__ == "__main__":
     
     # phase 1: track points in video and generate h5 file ------------------------- #
     print(f"Writing DLC analysis: {utils.RESULTS_PATH}")
-    
+
+    if REUSE_DLC_OUTPUT_H5_IN_ASSET:
+        # get existing h5 file from data/ 
+        existing_h5 = utils.get_dlc_output_h5_path(
+            input_video_file_path=input_video_file_path,
+            output_dir_path=utils.DATA_PATH,
+        ) 
+        # - a pickle file exists too
+        # - copy everything with matching filename component to results/
+        for file in existing_h5.parent.glob(f"{existing_h5.stem}*"):
+            dest = utils.RESULTS_PATH / file.name
+            dest.write_bytes(file.read_bytes())
+        # no need to skip DLC - it will see the existing h5 and skip itself
+ 
     deeplabcut.analyze_videos(
         config=utils.DLC_PROJECT_PATH / 'config.yaml',
         videos=[
