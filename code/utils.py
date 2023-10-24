@@ -183,8 +183,8 @@ def fit_ellipse(data) -> Ellipse:
     numerator = 2*(a*f*f+c*d*d+g*b*b-2*b*d*f-a*c*g)
     denominator1 = (b*b-a*c)*( (c-a)*np.sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a))
     denominator2 = (b*b-a*c)*( (a-c)*np.sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a))
-    width = np.sqrt(numerator/denominator1)
-    height = np.sqrt(numerator/denominator2)
+    width = np.sqrt(numerator/denominator1).real
+    height = np.sqrt(numerator/denominator2).real
 
     # angle of counterclockwise rotation of major-axis of ellipse to x-axis [eqn. 23] from (**)
     # or [eqn. 26] from (***).
