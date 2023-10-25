@@ -14,6 +14,15 @@
   - `6a8e6813-f883-4278-b42d-f2e174d760e3`
   - https://codeocean.allenneuraldynamics.org/data-assets/6a8e6813-f883-4278-b42d-f2e174d760e3/behavior-videos
 
+- full length session data and pre-run DLC output h5 data assets:
+  - raw data `ecephys_681532_2023-10-18_13-01-15`: 
+    - `7bc771ec-c3e6-44b3-b365-78b7e06137cb`
+    - https://codeocean.allenneuraldynamics.org/data-assets/7bc771ec-c3e6-44b3-b365-78b7e06137cb/ecephys_681532_2023-10-18_13-01-15
+  - DLC output from this capsule (for testing ellipse-fitting alone) `ecephys_681532_2023-10-18_eye-tracking-output`: 
+    - `2fd041ed-bd53-4804-8934-36b00356fa8c`
+    - https://codeocean.allenneuraldynamics.org/data-assets/2fd041ed-bd53-4804-8934-36b00356fa8c/results
+    - enable `REUSE_DLC_OUTPUT_H5_IN_ASSET` in `code/run.py`
+
 ## outputs
   - `results/*DLC_resnet50_universal_eye_trackingJul10shuffle1_1030000.h5` file with `(x, y, likelihood)` for each `(cr*, pupil*, eye*)` point in each frame 
   - `results/ellipses.h5` with `(center_x, center_y, width, height, phi)` for ellipses fit to each set of points `(cr*, pupil*, eye*)` 

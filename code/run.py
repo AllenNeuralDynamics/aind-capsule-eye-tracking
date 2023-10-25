@@ -13,7 +13,7 @@ import tensorflow as tf
 import utils
 import qc
 
-REUSE_DLC_OUTPUT_H5_IN_ASSET = False
+REUSE_DLC_OUTPUT_H5_IN_ASSET = True
 """Instead of re-generating DLC h5 file, use one in a data asset"""
  
 if __name__ == "__main__":
@@ -35,13 +35,14 @@ if __name__ == "__main__":
         print(f"{REUSE_DLC_OUTPUT_H5_IN_ASSET=}: using {existing_h5}")
         # - a pickle file exists too
         # - copy everything with matching filename component to results/
-        temp_files = []
+        temp_files = set()
         for file in existing_h5.parent.glob(f"{existing_h5.stem}*"):
-            temp_files.append(dest := utils.RESULTS_PATH / file.name)
-            dest.symlink_to(file.read_bytes())
+            temp_files.add(dest := utils.RESULTS_PATH / file.name)
+            if not dest.exists(): # during testing we may have already made this 
+                dest.symlink_to(file)
         # no need to skip DLC - it will see the existing h5 and skip itself
  
-    print(f"Writing DLC analysis: {utils.RESULTS_PATH}")
+    print(f"Running DLC analysis and writing to: {utils.RESULTS_PATH}")
     deeplabcut.analyze_videos(
         config=utils.DLC_PROJECT_PATH / 'config.yaml',
         videos=[
@@ -56,7 +57,7 @@ if __name__ == "__main__":
 
     # phase 2: fit ellipses to eye perimeter, pupil, and corneal reflection ------- #
     output_file_path = utils.RESULTS_PATH / 'ellipses.h5'
-    print(f"Writing ellipse fits: {output_file_path}")
+    print(f"Running ellipse fitting and writing to: {output_file_path}")
     body_part_to_df = utils.process_ellipses(
         dlc_output_h5_path=dlc_output_h5_path,
         output_file_path=output_file_path,
@@ -127,7 +128,7 @@ if __name__ == "__main__":
                 indent=4,
                 )
             )
-        frames_without_ellipses = random.shuffle(frames_without_ellipses)
+        random.shuffle(frames_without_ellipses)
         for idx in range(min(num_frames, NUM_FRAMES_PER_ELLIPSE)):
             fig = qc.plot_video_frame_with_dlc_points(
                 video_path=input_video_file_path,

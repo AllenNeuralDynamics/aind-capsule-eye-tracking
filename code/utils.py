@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import contextlib
 import pathlib
 from typing import Dict, Tuple, Iterator, Iterable, NamedTuple, Literal
 import concurrent.futures
@@ -71,6 +72,9 @@ class Ellipse(NamedTuple):
 def get_values_from_row(row: AnnotationData, annotation: Annotation, body_part: BodyPart) -> np.array:
     return np.array([v for k, v in row.items() if k[1] == annotation and body_part in k[0]])
 
+class InvalidEigenVectors(ValueError):
+    pass
+
 def get_ellipses_from_row(row: AnnotationData) -> dict[BodyPart, Ellipse]:
     out = dict()
     for body_part in DLC_LABELS:
@@ -78,10 +82,8 @@ def get_ellipses_from_row(row: AnnotationData) -> dict[BodyPart, Ellipse]:
         ellipse = Ellipse() # default nan values
         likely = arrays["likelihood"] > MIN_LIKELIHOOD_THRESHOLD
         if len(arrays["likelihood"][likely]) >= MIN_NUM_POINTS_FOR_ELLIPSE_FITTING: 
-            try:
+            with contextlib.suppress(InvalidEigenVectors):
                 ellipse = fit_ellipse([arrays["x"][likely], arrays["y"][likely]])
-            except Exception as e:
-                print(e) 
         out[body_part] = ellipse
     return out
 
@@ -170,6 +172,9 @@ def fit_ellipse(data) -> Ellipse:
     #|d f g> = -S3^(-1)*S2^(T)*|a b c> [eqn. 24]
     a2 = -S3.I*S2.T*a1
     
+    if not (a1.any() and a2.any()):
+        raise InvalidEigenVectors()
+
     # eigenvectors |a b c d f g> 
     coef = np.vstack([a1, a2])     
 
@@ -190,19 +195,19 @@ def fit_ellipse(data) -> Ellipse:
     numerator = 2*(a*f*f+c*d*d+g*b*b-2*b*d*f-a*c*g)
     denominator1 = (b*b-a*c)*( (c-a)*np.sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a))
     denominator2 = (b*b-a*c)*( (a-c)*np.sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a))
-    width = np.sqrt(numerator/denominator1).real
-    height = np.sqrt(numerator/denominator2).real
+    width = np.sqrt(numerator/denominator1)
+    height = np.sqrt(numerator/denominator2)
 
     # angle of counterclockwise rotation of major-axis of ellipse to x-axis [eqn. 23] from (**)
     # or [eqn. 26] from (***).
     phi = .5*np.arctan((2.*b)/(a-c))
 
     return Ellipse(
-        center_x=x0,
-        center_y=y0,
-        width=width,
-        height=height,
-        phi=phi,
+        center_x=x0.real,
+        center_y=y0.real,
+        width=width.real,
+        height=height.real,
+        phi=phi.real,
     )
 
 
