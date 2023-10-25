@@ -1,5 +1,6 @@
 import json
 import os
+import contextlib
 import sys
 import pathlib
 import random
@@ -28,18 +29,19 @@ if __name__ == "__main__":
 
     if REUSE_DLC_OUTPUT_H5_IN_ASSET:
         # get existing h5 file from data/ 
-        existing_h5 = utils.get_dlc_output_h5_path(
-            input_video_file_path=input_video_file_path,
-            output_dir_path=utils.DATA_PATH,
-        ) 
-        print(f"{REUSE_DLC_OUTPUT_H5_IN_ASSET=}: using {existing_h5}")
-        # - a pickle file exists too
-        # - copy everything with matching filename component to results/
         temp_files = set()
-        for file in existing_h5.parent.glob(f"{existing_h5.stem}*"):
-            temp_files.add(dest := utils.RESULTS_PATH / file.name)
-            if not dest.exists(): # during testing we may have already made this 
-                dest.symlink_to(file)
+        with contextlib.suppress(FileNotFoundError):
+            existing_h5 = utils.get_dlc_output_h5_path(
+                input_video_file_path=input_video_file_path,
+                output_dir_path=utils.DATA_PATH,
+            ) 
+            print(f"{REUSE_DLC_OUTPUT_H5_IN_ASSET=}: using {existing_h5}")
+            # - a pickle file exists too
+            # - copy everything with matching filename component to results/
+            for file in existing_h5.parent.glob(f"{existing_h5.stem}*"):
+                temp_files.add(dest := utils.RESULTS_PATH / file.name)
+                if not dest.exists(): # during testing we may have already made this 
+                    dest.symlink_to(file)
         # no need to skip DLC - it will see the existing h5 and skip itself
  
     print(f"Running DLC analysis and writing to: {utils.RESULTS_PATH}")
@@ -115,7 +117,7 @@ if __name__ == "__main__":
     total_frames = utils.get_video_frame_count(input_video_file_path)
     folder = QC_PATH / "failed_ellipse_fits"
     for body_part, df in body_part_to_df.items():
-        frames_without_ellipses = np.where(pd.isnull(df.center_x).index)[0]
+        frames_without_ellipses = np.where(pd.isna(df.center_x))[0]
         if (num_frames := len(frames_without_ellipses)) == 0:
             continue
         json_path = folder / f"{body_part}.json"

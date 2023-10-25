@@ -108,9 +108,9 @@ def process_ellipses(dlc_output_h5_path: pathlib.Path, output_file_path: pathlib
             ):
             for body_part in DLC_LABELS:
                 results.setdefault(
-                body_part, 
-                [None] * len(dlc_df),
-            )[future_to_index[future]] = future.result()[body_part]
+                    body_part, 
+                    [None] * len(dlc_df),
+                )[future_to_index[future]] = future.result()[body_part]
 
     output_file_path.touch()
     body_part_to_df = {}
