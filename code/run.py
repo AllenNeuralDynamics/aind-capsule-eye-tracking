@@ -137,7 +137,7 @@ if __name__ == "__main__":
             )
             fig.suptitle(f"did not meet criteria for ellipse-fitting of {body_part}")
             fig.savefig(
-                folder / f"{input_video_file_path.stem}_{frames_without_ellipses[idx]}.png",
+                folder / f"{body_part}_{frames_without_ellipses[idx]}.png",
                 dpi=300,
                 bbox_inches="tight",
                 pad_inches=0,
