@@ -26,7 +26,7 @@ BodyPart: TypeAlias = Literal['cr', 'eye', 'pupil']
 Annotation: TypeAlias = Literal['x', 'y', 'likelihood']
 AnnotationData: TypeAlias = Dict[Tuple[BodyPart, Annotation], float]
 
-MIN_LIKELIHOOD_THRESHOLD = 0.2
+MIN_LIKELIHOOD_THRESHOLD = 0.01
 MIN_NUM_POINTS_FOR_ELLIPSE_FITTING = 6 # at least 6 tracked points for annotation quality data
 
 def get_eye_video_paths() -> Iterator[pathlib.Path]:
