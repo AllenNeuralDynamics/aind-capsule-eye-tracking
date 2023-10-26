@@ -68,6 +68,21 @@ class Ellipse(NamedTuple):
     phi: np.floating = np.nan
     """angle of counterclockwise rotation of major-axis in radians from x-axis"""
 
+def is_in_ellipse(x: float, y: float, ellipse: Ellipse) -> bool:
+    """check whether `(x, y)` is within the perimeter of `ellipse`.
+    
+    - used for validating pupil center and cr are within eye ellipse
+    
+    >>> is_in_ellipse(0, 3.1, Ellipse(0, 0, 3, 5, 0))
+    False
+    >>> is_in_ellipse(0, 3, Ellipse(0, 0, 3, 5, 0))
+    True
+    >>> is_in_ellipse(5.1, 0, Ellipse(0, 0, 3, 5, 0))
+    False
+    >>> is_in_ellipse(5, 0, Ellipse(0, 0, 3, 5, 0))
+    True
+    """
+    raise NotImplementedError
 
 def get_values_from_row(row: AnnotationData, annotation: Annotation, body_part: BodyPart) -> np.array:
     return np.array([v for k, v in row.items() if k[1] == annotation and body_part in k[0]])
