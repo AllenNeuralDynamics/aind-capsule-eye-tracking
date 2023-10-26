@@ -287,7 +287,7 @@ class MinMax(NamedTuple):
     
 def get_dlc_min_max_xy(dlc_output_h5_path: str | pathlib.Path) -> MinMax:
     with contextlib.suppress(FileNotFoundError):
-        MinMax(**get_dlc_pickle_metadata(dlc_output_h5_path)['cropping_parameters'])
+        MinMax(*get_dlc_pickle_metadata(dlc_output_h5_path)['cropping_parameters'])
     df = get_dlc_df(dlc_output_h5_path)
     annotations = {i[0] for i in df}
     minmax = dict(MinMax(np.inf, -np.inf, np.inf, -np.inf)._asdict())
