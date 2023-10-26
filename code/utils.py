@@ -39,10 +39,18 @@ def get_eye_video_paths() -> Iterator[pathlib.Path]:
         )
     )
 
+def get_dlc_pickle_metadata(dlc_output_h5_path: str | pathlib.Path) -> dict:
+    h5 = pathlib.Path(dlc_output_h5_path)
+    pkl = (
+        h5
+        .with_stem(f'{h5.stem}_meta')
+        .with_suffix('.pickle')
+    )
+    return pickle.loads(pkl.read_bytes())['data']
+
 def get_dlc_df(dlc_output_h5_path: str | pathlib.Path) -> pd.DataFrame:
     # df has MultiIndex 
-    # TODO extract label from df
-    return getattr(pd.read_hdf(dlc_output_h5_path), DLC_SCORER_NAME) 
+    return getattr(pd.read_hdf(dlc_output_h5_path), get_dlc_pickle_metadata(dlc_output_h5_path)['Scorer']) 
 
 def get_dlc_output_h5_path(
     input_video_file_path: str | pathlib.Path, 
