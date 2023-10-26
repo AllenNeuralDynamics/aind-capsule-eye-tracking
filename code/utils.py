@@ -15,6 +15,7 @@ import tqdm
 
 DATA_PATH = pathlib.Path('/root/capsule/data/')
 RESULTS_PATH = pathlib.Path('/root/capsule/results/')
+QC_PATH = RESULTS_PATH / "qc" 
 
 DLC_PROJECT_PATH = DATA_PATH / 'universal_eye_tracking-peterl-2019-07-10'
 DLC_SCORER_NAME = 'DLC_resnet50_universal_eye_trackingJul10shuffle1_1030000'

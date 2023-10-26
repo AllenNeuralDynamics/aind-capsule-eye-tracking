@@ -67,12 +67,11 @@ if __name__ == "__main__":
     
     # qc plots -------------------------------------------------------------------- #
 
-    QC_PATH = utils.RESULTS_PATH / "qc" 
-    QC_PATH.mkdir(exist_ok=True, parents=True)
+    utils.QC_PATH.mkdir(exist_ok=True, parents=True)
 
     # example frames with ellipses drawn 
     NUM_FRAMES = 5
-    print(f"Writing {NUM_FRAMES} example frames to {QC_PATH}")
+    print(f"Writing {NUM_FRAMES} example frames to {utils.QC_PATH}")
     total_frames = utils.get_video_frame_count(input_video_file_path)
     step = total_frames // NUM_FRAMES + 1
     for idx in range(step//2, total_frames, step): # avoid frames at the very start/end
@@ -82,30 +81,30 @@ if __name__ == "__main__":
             frame_index=idx,
             dlc_output_h5_path=dlc_output_h5_path,
         ).savefig(
-            QC_PATH / f"{input_video_file_path.stem}_{idx}.png",
+            utils.QC_PATH / f"{input_video_file_path.stem}_{idx}.png",
             dpi=300,
             bbox_inches="tight",
             pad_inches=0,
         )
     
     # path of fitted pupil on a frame
-    print(f"Writing example frame with path of pupil center to {QC_PATH}")
+    print(f"Writing example frame with path of pupil center to {utils.QC_PATH}")
     qc.plot_video_frame_with_pupil_path(
         video_path=input_video_file_path,
         pupil_ellipses=body_part_to_df['pupil'],
         ).savefig(
-            QC_PATH / f"{input_video_file_path.stem}_pupil_path.png",
+            utils.QC_PATH / f"{input_video_file_path.stem}_pupil_path.png",
             dpi=300,
             bbox_inches="tight",
             pad_inches=0,
         )
 
     # pupil area timeseries
-    print(f"Writing plot of pupil area to {QC_PATH}")
+    print(f"Writing plot of pupil area to {utils.QC_PATH}")
     qc.plot_pupil_area(
         pupil_ellipses=body_part_to_df['pupil'],
         ).savefig(
-            QC_PATH / f"{input_video_file_path.stem}_pupil_area.png",
+            utils.QC_PATH / f"{input_video_file_path.stem}_pupil_area.png",
             dpi=300,
             bbox_inches="tight",
             pad_inches=0,
@@ -115,7 +114,7 @@ if __name__ == "__main__":
     NUM_FRAMES_PER_ELLIPSE = 5
     print(f"Writing sets of up to {NUM_FRAMES_PER_ELLIPSE} frames that didn't meet criteria for fitting each ellipse type")
     total_frames = utils.get_video_frame_count(input_video_file_path)
-    folder = QC_PATH / "failed_ellipse_fits"
+    folder = utils.QC_PATH / "failed_ellipse_fits"
     for body_part, df in body_part_to_df.items():
         frames_without_ellipses = np.where(pd.isna(df.center_x))[0]
         if (num_frames := len(frames_without_ellipses)) == 0:
