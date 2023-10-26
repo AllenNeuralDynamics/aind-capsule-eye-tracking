@@ -7,8 +7,7 @@ import functools
 import pathlib
 import pickle
 from typing import (Dict, Iterable, Iterator, Literal, Mapping,
-                    MutableSequence, NamedTuple, Sequence, Tuple)
-from unittest import result
+                    NamedTuple, Sequence, Tuple)
 
 import cv2
 import numpy as np
@@ -23,12 +22,14 @@ QC_PATH = RESULTS_PATH / "qc"
 DLC_PROJECT_PATH = DATA_PATH / 'universal_eye_tracking-peterl-2019-07-10'
 DLC_SCORER_NAME = 'DLC_resnet50_universal_eye_trackingJul10shuffle1_1030000'
 
-DLC_LABELS = ('eye', 'pupil', 'cr') # order matters for ellipse fitting
 VIDEO_SUFFIXES = ('.mp4', '.avi', '.wmv', '.mov')
 
 BodyPart: TypeAlias = Literal['cr', 'eye', 'pupil']
 Annotation: TypeAlias = Literal['x', 'y', 'likelihood']
 AnnotationData: TypeAlias = Dict[Tuple[BodyPart, Annotation], float]
+
+DLC_LABELS: tuple[BodyPart, ...] = ('eye', 'pupil', 'cr') # order matters for ellipse fitting
+ANNOTATION_PROPERTIES: tuple[Annotation, ...] = ('x', 'y', 'likelihood')
 
 MIN_LIKELIHOOD_THRESHOLD = 0.01
 MIN_NUM_POINTS_FOR_ELLIPSE_FITTING = 6 # at least 6 tracked points for annotation quality data
@@ -116,7 +117,7 @@ def get_ellipses_from_row(row: AnnotationData) -> dict[BodyPart, Ellipse]:
     ellipses = dict.fromkeys(DLC_LABELS, Ellipse())
     assert DLC_LABELS[0] == 'eye', f"expected `eye` to be first in {DLC_LABELS=}"
     for body_part in DLC_LABELS:
-        arrays = {annotation: get_values_from_row(row, annotation, body_part) for annotation in ('x', 'y', 'likelihood')}
+        arrays = {annotation: get_values_from_row(row, annotation, body_part) for annotation in ANNOTATION_PROPERTIES}
         likely = arrays["likelihood"] > MIN_LIKELIHOOD_THRESHOLD
         if len(arrays["likelihood"][likely]) < MIN_NUM_POINTS_FOR_ELLIPSE_FITTING: 
             continue
@@ -175,9 +176,13 @@ def get_ellipses_from_dlc_in_parallel(dlc_output_h5_path: pathlib.Path, executor
                 body_part, 
                 [None] * len(dlc_df),
             )[future_to_index[future]] = result
-    output = {body_part: tuple(ellipses) for body_part, ellipses in results.items() if ellipses is not None} # should be no None - this is for mypy
+            
+    assert all(results[body_part].count(None) == 0 for body_part in DLC_LABELS)
+    output: dict[BodyPart, tuple[Ellipse, ...]] = {
+        body_part: tuple(e for e in ellipses if e is not None) # there are no None values - this is for mypy 
+        for body_part, ellipses in results.items() 
+    }
     assert all(len(output[body_part]) == len(dlc_df) for body_part in DLC_LABELS)
-    assert all(ellipses.count(None) == 0 for ellipses in output.values())
     return output
 
 def get_filtered_ellipses(
@@ -219,7 +224,7 @@ def get_filtered_ellipses(
 
         
         if eye != invalid:
-            for body_part in ('cr', 'pupil'):
+            for body_part in DLC_LABELS[1:]:
                 if _body_part_to_ellipses[body_part][idx] == invalid:
                     continue
                 if not is_in_ellipse(
