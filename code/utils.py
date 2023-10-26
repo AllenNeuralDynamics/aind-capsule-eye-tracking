@@ -195,7 +195,7 @@ def get_filtered_ellipses(
     dlc_min_max_xy = get_dlc_min_max_xy(dlc_output_h5_path)
     n = NUM_NAN_FRAMES_EITHER_SIDE_OF_INVALID_EYE_FRAME
     invalid = Ellipse()
-    _body_part_to_ellipses: dict[BodyPart, list[Ellipse]] = {k: list(v) for k, v in _body_part_to_ellipses.items()}
+    _body_part_to_ellipses: dict[BodyPart, list[Ellipse]] = {k: list(v) for k, v in body_part_to_ellipses.items()}
     for idx, eye in tqdm.tqdm(
             enumerate(_body_part_to_ellipses['eye']), 
             desc='filtering',
