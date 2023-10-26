@@ -46,7 +46,7 @@ def get_dlc_df(dlc_output_h5_path: str | pathlib.Path) -> pd.DataFrame:
 def get_dlc_output_h5_path(
     input_video_file_path: str | pathlib.Path, 
     output_dir_path: str | pathlib.Path = RESULTS_PATH,
-):
+) -> pathlib.Path:
     output = next(
         pathlib.Path(output_dir_path)
         .rglob(
@@ -216,11 +216,21 @@ def get_video_data(video_path: str | pathlib.Path | cv2.VideoCapture) -> cv2.Vid
         return video_path
     return cv2.VideoCapture(str(video_path))
 
-def get_video_frame_count(video_path: str | pathlib.Path | cv2.VideoCapture) -> int:
-    return int(get_video_data(video_path).get(cv2.CAP_PROP_FRAME_COUNT))
+def get_video_frame_count(video_path_or_data: str | pathlib.Path | cv2.VideoCapture) -> int:
+    return int(get_video_data(video_path_or_data).get(cv2.CAP_PROP_FRAME_COUNT))
+
+@functools.cache
+def get_video_frame_size_xy(video_path_or_data: str | pathlib.Path | cv2.VideoCapture) -> Tuple[int, int]:
+    return get_video_data(video_path_or_data).read()[1][:,:,0].shape.T
+
+def is_in_frame(x: float, y: float, video_path_or_data: str | pathlib.Path | cv2.VideoCapture) -> bool:
+    """Check if point is inside video frame."""
+    w, h = get_video_frame_size_xy(video_path_or_data)
+    return (0 <= x < w) and (0 <= y < h)
+
 
 def get_pupil_area_pixels(
-    pupil_ellipses: Iterable[utils.Ellipse] | pd.DataFrame, 
+    pupil_ellipses: Iterable[Ellipse] | pd.DataFrame, 
     ) -> pd.Series:
     if not isinstance(pupil_ellipses, pd.DataFrame):
         pupil_ellipses = pd.DataFrame.from_records(pupil_ellipses, columns=Ellipse._fields)
