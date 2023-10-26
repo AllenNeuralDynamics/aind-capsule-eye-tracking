@@ -20,7 +20,7 @@ QC_PATH = RESULTS_PATH / "qc"
 DLC_PROJECT_PATH = DATA_PATH / 'universal_eye_tracking-peterl-2019-07-10'
 DLC_SCORER_NAME = 'DLC_resnet50_universal_eye_trackingJul10shuffle1_1030000'
 
-DLC_LABELS = ('cr', 'eye', 'pupil')
+DLC_LABELS = ('eye', 'pupil', 'cr') # order matters for ellipse fitting
 VIDEO_SUFFIXES = ('.mp4', '.avi', '.wmv', '.mov')
 
 BodyPart: TypeAlias = Literal['cr', 'eye', 'pupil']
@@ -96,19 +96,33 @@ class InvalidEigenVectors(ValueError):
     pass
 
 def get_ellipses_from_row(row: AnnotationData) -> dict[BodyPart, Ellipse]:
-    out = dict()
+    ellipses = dict.fromkeys(DLC_LABELS, Ellipse())
+    assert DLC_LABELS[0] == 'eye', f"expected `eye` to be first in {DLC_LABELS=}"
     for body_part in DLC_LABELS:
         arrays = {annotation: get_values_from_row(row, annotation, body_part) for annotation in ('x', 'y', 'likelihood')}
-        ellipse = Ellipse() # default nan values
         likely = arrays["likelihood"] > MIN_LIKELIHOOD_THRESHOLD
-        if len(arrays["likelihood"][likely]) >= MIN_NUM_POINTS_FOR_ELLIPSE_FITTING: 
-            with contextlib.suppress(InvalidEigenVectors):
-                ellipse = fit_ellipse([arrays["x"][likely], arrays["y"][likely]])
-        out[body_part] = ellipse
-    return out
+        if len(arrays["likelihood"][likely]) < MIN_NUM_POINTS_FOR_ELLIPSE_FITTING: 
+            continue
+        try:
+            ellipse = fit_ellipse([arrays["x"][likely], arrays["y"][likely]])
+        except InvalidEigenVectors:
+            continue
+        if body_part == 'eye' and all(np.isnan(ellipse)):
+            # if eye ellipse is invalid, all other ellipses are invalid
+            break
+        if body_part != 'eye':
+            assert not all(np.isnan(ellipses['eye']))
+            if not is_in_ellipse(ellipse.center_x, ellipse.center_y, ellipses['eye']):
+                # cr or pupil centers outside eye ellipse are invalid
+                continue            
+        ellipses[body_part] = ellipse
+    return ellipses
 
 
-def process_ellipses(dlc_output_h5_path: pathlib.Path, output_file_path: pathlib.Path) -> dict[BodyPart, pd.DataFrame]:
+def process_ellipses(
+    dlc_output_h5_path: pathlib.Path, 
+    output_file_path: pathlib.Path,
+) -> dict[BodyPart, pd.DataFrame]:
     output_file_path = pathlib.Path(output_file_path).with_suffix('.h5')
     dlc_df = get_dlc_df(dlc_output_h5_path)
     future_to_index = {}
