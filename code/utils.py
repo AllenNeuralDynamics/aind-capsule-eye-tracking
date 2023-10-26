@@ -135,7 +135,7 @@ def process_ellipses(
 ) -> dict[BodyPart, pd.DataFrame]:
     output_file_path = pathlib.Path(output_file_path).with_suffix('.h5')
     dlc_df = get_dlc_df(dlc_output_h5_path)
-    dlc_min_max_xy = get_dlc_min_max_xy(dlc_df)
+    dlc_min_max_xy = get_dlc_min_max_xy(dlc_output_h5_path)
     future_to_index = {}
     results = {}
     with concurrent.futures.ProcessPoolExecutor() as executor:
@@ -285,13 +285,10 @@ class MinMax(NamedTuple):
     min_y: float
     max_y: float
     
-def get_dlc_min_max_xy(dlc_output_h5_path_or_df: str | pathlib.Path | pd.DataFrame) -> MinMax:
+def get_dlc_min_max_xy(dlc_output_h5_path: str | pathlib.Path) -> MinMax:
     with contextlib.suppress(FileNotFoundError):
-        MinMax(**get_dlc_pickle_metadata(dlc_output_h5_path_or_df)['cropping_parameters'])
-    if isinstance(dlc_output_h5_path_or_df, pd.DataFrame):
-        df = dlc_output_h5_path_or_df
-    else:
-        df = get_dlc_df(dlc_output_h5_path_or_df)
+        MinMax(**get_dlc_pickle_metadata(dlc_output_h5_path)['cropping_parameters'])
+    df = get_dlc_df(dlc_output_h5_path)
     annotations = {i[0] for i in df}
     minmax = dict(MinMax(np.inf, -np.inf, np.inf, -np.inf)._asdict())
     for annotation in annotations:
