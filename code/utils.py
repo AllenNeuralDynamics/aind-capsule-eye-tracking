@@ -83,7 +83,11 @@ def is_in_ellipse(x: float, y: float, ellipse: Ellipse) -> bool:
     >>> is_in_ellipse(5, 0, Ellipse(0, 0, 3, 5, 0))
     True
     """
-    raise NotImplementedError
+    n1 = np.cos(ellipse.phi) * (x - ellipse.center_x) + np.sin(ellipse.phi) * (y - ellipse.center_y)
+    n2 = np.sin(ellipse.phi) * (x - ellipse.center_x) - np.cos(ellipse.phi) * (y - ellipse.center_y)
+    if (n1 * n1)/(ellipse.height * ellipse.height) + (n2 * n2)/(ellipse.width * ellipse.width) <= 1:
+        return True
+    return False
 
 def get_values_from_row(row: AnnotationData, annotation: Annotation, body_part: BodyPart) -> np.array:
     return np.array([v for k, v in row.items() if k[1] == annotation and body_part in k[0]])
