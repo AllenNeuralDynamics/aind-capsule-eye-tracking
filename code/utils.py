@@ -299,7 +299,7 @@ def get_dlc_min_max_xy(dlc_output_h5_path: str | pathlib.Path) -> MinMax:
     return MinMax(**minmax)
 
 def is_in_min_max_xy(x: float, y: float, min_max: MinMax) -> bool:
-    """Check if point is within max-min range of points returned from dlc."""
+    """Check if point is within range."""
     return (
         min_max.min_x <= x <= min_max.max_x
         and min_max.min_y <= y <= min_max.max_y
