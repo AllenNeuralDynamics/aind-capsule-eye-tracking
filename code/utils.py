@@ -3,11 +3,13 @@ from __future__ import annotations
 import copy
 import contextlib
 import pathlib
+import pickle
 from typing import Dict, Tuple, Iterator, Iterable, NamedTuple, Literal
 import concurrent.futures
 import functools
 
 from typing_extensions import TypeAlias
+from unittest import result
 import numpy as np
 import pandas as pd
 import cv2
@@ -133,6 +135,7 @@ def process_ellipses(
 ) -> dict[BodyPart, pd.DataFrame]:
     output_file_path = pathlib.Path(output_file_path).with_suffix('.h5')
     dlc_df = get_dlc_df(dlc_output_h5_path)
+    dlc_min_max_xy = get_dlc_min_max_xy(dlc_df)
     future_to_index = {}
     results = {}
     with concurrent.futures.ProcessPoolExecutor() as executor:
@@ -149,10 +152,16 @@ def process_ellipses(
                 ascii=True, 
             ):
             for body_part in DLC_LABELS:
+                result = future.result()[body_part] # any exceptions raised here
+                if not is_in_min_max_xy(result.center_x, result.center_y, dlc_min_max_xy):
+                    # the center of a fitted ellipse should be within the max-min
+                    # range of all points returned from dlc (we could use the
+                    # video frame size here instead, if available)
+                    result = Ellipse() # all nan
                 results.setdefault(
                     body_part, 
                     [None] * len(dlc_df),
-                )[future_to_index[future]] = future.result()[body_part]
+                )[future_to_index[future]] = result
 
     output_file_path.touch()
     body_part_to_df = {}
@@ -270,6 +279,34 @@ def is_in_frame(x: float, y: float, video_path_or_data: str | pathlib.Path | cv2
     w, h = get_video_frame_size_xy(video_path_or_data)
     return (0 <= x < w) and (0 <= y < h)
 
+class MinMax(NamedTuple):
+    min_x: float
+    max_x: float
+    min_y: float
+    max_y: float
+    
+def get_dlc_min_max_xy(dlc_output_h5_path_or_df: str | pathlib.Path | pd.DataFrame) -> MinMax:
+    with contextlib.suppress(FileNotFoundError):
+        MinMax(**get_dlc_pickle_metadata(dlc_output_h5_path_or_df)['cropping_parameters'])
+    if isinstance(dlc_output_h5_path_or_df, pd.DataFrame):
+        df = dlc_output_h5_path_or_df
+    else:
+        df = get_dlc_df(dlc_output_h5_path_or_df)
+    annotations = {i[0] for i in df}
+    minmax = dict(MinMax(np.inf, -np.inf, np.inf, -np.inf)._asdict())
+    for annotation in annotations:
+        minmax['min_x'] = min(minmax['min_x'], df[annotation, 'x'].min())
+        minmax['max_x'] = max(minmax['max_x'], df[annotation, 'x'].max())
+        minmax['min_y'] = min(minmax['min_y'], df[annotation, 'y'].min())
+        minmax['max_y'] = max(minmax['max_y'], df[annotation, 'y'].max())
+    return MinMax(**minmax)
+
+def is_in_min_max_xy(x: float, y: float, min_max: MinMax) -> bool:
+    """Check if point is within max-min range of points returned from dlc."""
+    return (
+        min_max.min_x <= x <= min_max.max_x
+        and min_max.min_y <= y <= min_max.max_y
+    )
 
 def get_pupil_area_pixels(
     pupil_ellipses: Iterable[Ellipse] | pd.DataFrame, 
