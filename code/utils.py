@@ -1,19 +1,20 @@
 from __future__ import annotations
 
-import copy
+import concurrent.futures
 import contextlib
+import copy
+import functools
 import pathlib
 import pickle
-from typing import Dict, Tuple, Iterator, Iterable, NamedTuple, Literal
-import concurrent.futures
-import functools
-
-from typing_extensions import TypeAlias
+from typing import (Dict, Iterable, Iterator, Literal, Mapping,
+                    MutableSequence, NamedTuple, Sequence, Tuple)
 from unittest import result
+
+import cv2
 import numpy as np
 import pandas as pd
-import cv2
 import tqdm
+from typing_extensions import TypeAlias
 
 DATA_PATH = pathlib.Path('/root/capsule/data/')
 RESULTS_PATH = pathlib.Path('/root/capsule/results/')
@@ -31,6 +32,12 @@ AnnotationData: TypeAlias = Dict[Tuple[BodyPart, Annotation], float]
 
 MIN_LIKELIHOOD_THRESHOLD = 0.01
 MIN_NUM_POINTS_FOR_ELLIPSE_FITTING = 6 # at least 6 tracked points for annotation quality data
+NUM_NAN_FRAMES_EITHER_SIDE_OF_INVALID_EYE_FRAME = 2
+"""number of frames to set to nan for pupil & cr on either side of an invalid eye
+ellipse - this is to avoid during a putative blink, which gives bad results.
+- see visual behavior whitepaper
+https://portal.brain-map.org/explore/circuits/visual-behavior-2p
+"""
 
 def get_eye_video_paths() -> Iterator[pathlib.Path]:
     yield from (
@@ -129,48 +136,99 @@ def get_ellipses_from_row(row: AnnotationData) -> dict[BodyPart, Ellipse]:
     return ellipses
 
 
-def process_ellipses(
+def run_ellipse_processing(
     dlc_output_h5_path: pathlib.Path, 
     output_file_path: pathlib.Path,
 ) -> dict[BodyPart, pd.DataFrame]:
     output_file_path = pathlib.Path(output_file_path).with_suffix('.h5')
-    dlc_df = get_dlc_df(dlc_output_h5_path)
-    dlc_min_max_xy = get_dlc_min_max_xy(dlc_output_h5_path)
-    future_to_index = {}
-    results = {}
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        for idx, row in dlc_df.iterrows():
-            future_to_index[
-                executor.submit(get_ellipses_from_row, row.to_dict())
-            ] = idx 
-        for future in tqdm.tqdm(
-                concurrent.futures.as_completed(future_to_index.keys()), 
-                desc='fitting',
-                unit='frames',
-                total=len(dlc_df),
-                ncols=79,
-                ascii=True, 
-            ):
-            for body_part in DLC_LABELS:
-                result = future.result()[body_part] # any exceptions raised here
-                if not is_in_min_max_xy(result.center_x, result.center_y, dlc_min_max_xy):
-                    # the center of a fitted ellipse should be within the max-min
-                    # range of all points returned from dlc (we could use the
-                    # video frame size here instead, if available)
-                    result = Ellipse() # all nan
-                results.setdefault(
-                    body_part, 
-                    [None] * len(dlc_df),
-                )[future_to_index[future]] = result
-
+        body_part_to_ellipses = get_ellipses_from_dlc_in_parallel(dlc_output_h5_path, executor)
+    body_part_to_ellipses = get_filtered_ellipses(body_part_to_ellipses, dlc_output_h5_path)
     output_file_path.touch()
-    body_part_to_df = {}
+    body_part_to_df: dict[BodyPart, pd.DataFrame] = {}
     for body_part in DLC_LABELS:
-        df = pd.DataFrame.from_records(results[body_part], columns=Ellipse._fields)
+        df = pd.DataFrame.from_records(body_part_to_ellipses[body_part], columns=Ellipse._fields)
         body_part_to_df[body_part] = df
         df.to_hdf(output_file_path, key=body_part, mode='a')       
       
     return body_part_to_df
+                    
+def get_ellipses_from_dlc_in_parallel(dlc_output_h5_path: pathlib.Path, executor: concurrent.futures.Executor) -> dict[BodyPart, tuple[Ellipse, ...]]:
+    dlc_df = get_dlc_df(dlc_output_h5_path)
+    results: dict[BodyPart, list[Ellipse | None]] = {}
+    future_to_index: dict[concurrent.futures.Future, int] = {}
+    for idx, row in dlc_df.iterrows():
+        future_to_index[
+            executor.submit(get_ellipses_from_row, row.to_dict())
+        ] = idx 
+    for future in tqdm.tqdm(
+            concurrent.futures.as_completed(future_to_index.keys()), 
+            desc='fitting',
+            unit='frames',
+            total=len(dlc_df),
+            ncols=79,
+            ascii=True, 
+        ):
+        for body_part in DLC_LABELS:
+            result = future.result()[body_part] # any exceptions raised here
+            results.setdefault(
+                body_part, 
+                [None] * len(dlc_df),
+            )[future_to_index[future]] = result
+    output = {body_part: tuple(ellipses) for body_part, ellipses in results.items() if ellipses is not None} # should be no None - this is for mypy
+    assert all(len(output[body_part]) == len(dlc_df) for body_part in DLC_LABELS)
+    assert all(ellipses.count(None) == 0 for ellipses in output.values())
+    return output
+
+def get_filtered_ellipses(
+    body_part_to_ellipses: Mapping[BodyPart, Sequence[Ellipse]], 
+    dlc_output_h5_path: pathlib.Path,
+    ) -> dict[BodyPart, tuple[Ellipse, ...]]:
+    """Apply physical constraints (e.g. pupil must be within eye perimeter) and
+    good-practice filtering learned from experinece (e.g. bad pupil fits before/after blinks)"""
+    num_frames = len(body_part_to_ellipses['eye'])
+    dlc_min_max_xy = get_dlc_min_max_xy(dlc_output_h5_path)
+    n = NUM_NAN_FRAMES_EITHER_SIDE_OF_INVALID_EYE_FRAME
+    invalid = Ellipse()
+    _body_part_to_ellipses: dict[BodyPart, list[Ellipse]] = {k: list(v) for k, v in _body_part_to_ellipses.items()}
+    for idx, eye in tqdm.tqdm(
+            enumerate(_body_part_to_ellipses['eye']), 
+            desc='filtering',
+            unit='frames',
+            total=num_frames,
+            ncols=79,
+            ascii=True, 
+        ):
+        
+        # no ellipses should have centers outside of min/max range of dlc-analyzed
+        # area of video
+        for body_part in DLC_LABELS:
+            if not is_in_min_max_xy(
+                    _body_part_to_ellipses[body_part][idx].center_x, 
+                    _body_part_to_ellipses[body_part][idx].center_y, 
+                    dlc_min_max_xy,
+                ):
+                _body_part_to_ellipses[body_part][idx] = invalid
+        
+        # if eye ellipse is invalid, all other ellipses are invalid in adjacent frames
+        if eye == invalid:
+            for invalid_idx in range(max(idx - n, 0), min(idx + n + 1, num_frames)):
+                _body_part_to_ellipses['cr'][invalid_idx] = invalid
+                _body_part_to_ellipses['pupil'][invalid_idx] = invalid
+            continue
+
+        
+        if eye != invalid:
+            for body_part in ('cr', 'pupil'):
+                if _body_part_to_ellipses[body_part][idx] == invalid:
+                    continue
+                if not is_in_ellipse(
+                        _body_part_to_ellipses[body_part][idx].center_x, 
+                        _body_part_to_ellipses[body_part][idx].center_y, 
+                        eye,
+                    ):
+                    _body_part_to_ellipses[body_part][idx] = invalid
+    return {k: tuple(v) for k, v in _body_part_to_ellipses.items()}
 
 
 def fit_ellipse(data) -> Ellipse:

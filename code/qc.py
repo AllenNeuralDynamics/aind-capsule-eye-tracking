@@ -101,7 +101,7 @@ def plot_video_frame_with_ellipses(
     Adds individual points from DLC analysis, if h5 path provided.
     """
     if frame_index is None:
-        frame_index = random.randint(0, utils.get_video_frame_count(v))
+        frame_index = random.randint(0, utils.get_video_frame_count(video_path))
     dlc_df = None if dlc_output_h5_path is None else utils.get_dlc_df(dlc_output_h5_path)
     if dlc_df is not None:
         fig = plot_video_frame_with_dlc_points(

@@ -1,7 +1,6 @@
+import contextlib
 import json
 import os
-import contextlib
-import sys
 import pathlib
 import random
 
@@ -9,10 +8,9 @@ os.environ["DLClight"]="True" # set before importing DLC
 import deeplabcut
 import numpy as np
 import pandas as pd
-import tensorflow as tf
-
-import utils
 import qc
+import tensorflow as tf
+import utils
 
 REUSE_DLC_OUTPUT_H5_IN_ASSET = True
 """Instead of re-generating DLC h5 file, use one in a data asset"""
@@ -60,7 +58,7 @@ if __name__ == "__main__":
     # phase 2: fit ellipses to eye perimeter, pupil, and corneal reflection ------- #
     output_file_path = utils.RESULTS_PATH / 'ellipses.h5'
     print(f"Running ellipse fitting and writing to: {output_file_path}")
-    body_part_to_df = utils.process_ellipses(
+    body_part_to_df = utils.run_ellipse_processing(
         dlc_output_h5_path=dlc_output_h5_path,
         output_file_path=output_file_path,
     )
