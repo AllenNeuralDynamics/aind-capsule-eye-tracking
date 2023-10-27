@@ -68,7 +68,13 @@ def plot_pupil_area(
     pupil_ellipses: Iterable[utils.Ellipse] | pd.DataFrame, 
     ) -> plt.Figure:
     fig = plt.figure(figsize=(6,2))
-    plt.plot(utils.get_pupil_area_pixels(pupil_ellipses), color=ELLIPSE_COLORS['pupil'])
+    
+    areas = utils.get_pupil_area_pixels(pupil_ellipses)
+    threshold = np.percentile(areas[np.isfinite(areas)], 99)
+    outlier_indices = areas > threshold
+
+    areas[outlier_indices] = np.nan
+    plt.plot(areas, color=ELLIPSE_COLORS['pupil'])
     ax = plt.gca()
     ax.set_ylim((0, ax.get_ylim()[-1]))
     ax.set_xlabel('frame index')

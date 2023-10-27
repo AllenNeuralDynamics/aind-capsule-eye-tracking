@@ -125,11 +125,11 @@ def get_ellipses_from_row(row: AnnotationData) -> dict[BodyPart, Ellipse]:
             ellipse = fit_ellipse([arrays["x"][likely], arrays["y"][likely]])
         except InvalidEigenVectors:
             continue
-        if body_part == 'eye' and all(np.isnan(ellipse)):
+        if body_part == 'eye' and is_ellipse_invalid(ellipse):
             # if eye ellipse is invalid, all other ellipses are invalid
             break
         if body_part != 'eye':
-            assert not all(np.isnan(ellipses['eye']))
+            assert not is_ellipse_invalid(ellipses['eye'])
             if not is_in_ellipse(ellipse.center_x, ellipse.center_y, ellipses['eye']):
                 # cr or pupil centers outside eye ellipse are invalid
                 continue            
@@ -154,29 +154,45 @@ def run_ellipse_processing(
       
     return body_part_to_df
                     
-def get_ellipses_from_dlc_in_parallel(dlc_output_h5_path: pathlib.Path, executor: concurrent.futures.Executor) -> dict[BodyPart, tuple[Ellipse, ...]]:
+def get_ellipses_from_dlc_in_parallel(
+    dlc_output_h5_path: pathlib.Path, 
+    executor: concurrent.futures.Executor | None = None,
+) -> dict[BodyPart, tuple[Ellipse, ...]]:
+
     dlc_df = get_dlc_df(dlc_output_h5_path)
     results: dict[BodyPart, list[Ellipse | None]] = {}
     future_to_index: dict[concurrent.futures.Future, int] = {}
-    for idx, row in dlc_df.iterrows():
-        future_to_index[
-            executor.submit(get_ellipses_from_row, row.to_dict())
-        ] = idx 
-    for future in tqdm.tqdm(
-            concurrent.futures.as_completed(future_to_index.keys()), 
-            desc='fitting',
-            unit='frames',
-            total=len(dlc_df),
-            ncols=79,
-            ascii=True, 
-        ):
-        for body_part in DLC_LABELS:
-            result = future.result()[body_part] # any exceptions raised here
-            results.setdefault(
-                body_part, 
-                [None] * len(dlc_df),
-            )[future_to_index[future]] = result
-            
+    if executor is None:
+        c = executor = concurrent.futures.ProcessPoolExecutor()
+    else:
+        c = contextlib.nullcontext()
+    with c:
+        for idx, row in tqdm.tqdm(
+                dlc_df.iterrows(),             
+                desc='submitting jobs',
+                unit='frames',
+                total=len(dlc_df),
+                ncols=79,
+                ascii=True, 
+            ):
+            future_to_index[
+                executor.submit(get_ellipses_from_row, row.to_dict())
+            ] = idx 
+        for future in tqdm.tqdm(
+                concurrent.futures.as_completed(future_to_index.keys()), 
+                desc='fitting ellipses',
+                unit='frames',
+                total=len(dlc_df),
+                ncols=79,
+                ascii=True, 
+            ):
+            for body_part in DLC_LABELS:
+                result = future.result()[body_part] # any exceptions raised here
+                results.setdefault(
+                    body_part, 
+                    [None] * len(dlc_df),
+                )[future_to_index[future]] = result
+                
     assert all(results[body_part].count(None) == 0 for body_part in DLC_LABELS)
     output: dict[BodyPart, tuple[Ellipse, ...]] = {
         body_part: tuple(e for e in ellipses if e is not None) # there are no None values - this is for mypy 
@@ -184,6 +200,13 @@ def get_ellipses_from_dlc_in_parallel(dlc_output_h5_path: pathlib.Path, executor
     }
     assert all(len(output[body_part]) == len(dlc_df) for body_part in DLC_LABELS)
     return output
+
+def is_ellipse_invalid(ellipse: Ellipse) -> bool:
+    """
+    >>> is_ellipse_invalid(Ellipse()) # default values represent invalid
+    True
+    """
+    return all(np.isnan(ellipse))
 
 def get_filtered_ellipses(
     body_part_to_ellipses: Mapping[BodyPart, Sequence[Ellipse]], 
@@ -198,7 +221,7 @@ def get_filtered_ellipses(
     _body_part_to_ellipses: dict[BodyPart, list[Ellipse]] = {k: list(v) for k, v in body_part_to_ellipses.items()}
     for idx, eye in tqdm.tqdm(
             enumerate(_body_part_to_ellipses['eye']), 
-            desc='filtering',
+            desc='filtering ellipses',
             unit='frames',
             total=num_frames,
             ncols=79,
@@ -208,15 +231,17 @@ def get_filtered_ellipses(
         # no ellipses should have centers outside of min/max range of dlc-analyzed
         # area of video
         for body_part in DLC_LABELS:
+            if is_ellipse_invalid(e := _body_part_to_ellipses[body_part][idx]):
+                continue
             if not is_in_min_max_xy(
-                    _body_part_to_ellipses[body_part][idx].center_x, 
-                    _body_part_to_ellipses[body_part][idx].center_y, 
+                    e.center_x, 
+                    e.center_y, 
                     dlc_min_max_xy,
-                ):
+            ):
                 _body_part_to_ellipses[body_part][idx] = invalid
         
         # if eye ellipse is invalid, all other ellipses are invalid in adjacent frames
-        if eye == invalid:
+        if is_ellipse_invalid(eye):
             for invalid_idx in range(max(idx - n, 0), min(idx + n + 1, num_frames)):
                 _body_part_to_ellipses['cr'][invalid_idx] = invalid
                 _body_part_to_ellipses['pupil'][invalid_idx] = invalid
@@ -225,7 +250,7 @@ def get_filtered_ellipses(
         
         if eye != invalid:
             for body_part in DLC_LABELS[1:]:
-                if _body_part_to_ellipses[body_part][idx] == invalid:
+                if is_ellipse_invalid(_body_part_to_ellipses[body_part][idx]):
                     continue
                 if not is_in_ellipse(
                         _body_part_to_ellipses[body_part][idx].center_x, 
