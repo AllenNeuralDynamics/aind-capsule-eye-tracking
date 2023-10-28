@@ -132,9 +132,9 @@ def get_ellipses_from_row(row: AnnotationData, bounds: MinMax) -> dict[BodyPart,
         if body_part == 'eye' and is_ellipse_invalid(ellipse):
             # if eye ellipse is invalid, all other ellipses are invalid
             break
-        # if body_part == 'eye' not is_ellipse_in_min_max_xy(ellipse, bounds):
-        #     # eye ellipse should not extend beyond bounds 
-        #     break
+        if body_part == 'eye' not is_ellipse_in_min_max_xy(ellipse, bounds):
+            # eye ellipse should not extend beyond bounds 
+            break
         if body_part != 'eye':
             assert not is_ellipse_invalid(ellipses['eye'])
             if not is_in_ellipse(ellipse.center_x, ellipse.center_y, ellipses['eye']):
@@ -143,8 +143,29 @@ def get_ellipses_from_row(row: AnnotationData, bounds: MinMax) -> dict[BodyPart,
         ellipses[body_part] = ellipse
     return ellipses
 
+def get_ellipse_vertices(ellipse: Ellipse) -> tuple[tuple[float, float], ...]:
+    """
+    >>> get_ellipse_vertices(Ellipse(0, 0, 3, 5, 0))
+    ((3, 0), (0, 5), (-3, -0), (-0, -5)) 
+    """
+    e = ellipse
+    x1, y1 = e.width * np.cos(e.phi), e.width * np.sin(e.phi)
+    x2, y2 = e.height * np.cos(e.phi + np.pi/2), e.height * np.sin(e.phi + np.pi/2)
+    return tuple(
+        (e.center_x + a, e.center_y + b)
+        for a, b in (
+            (x1, y1),
+            (x2, y2),
+            (-x1, -y1),
+            (-x2, -y2),
+        )
+    )
+
 def is_ellipse_in_min_max_xy(ellipse: Ellipse, min_max: MinMax) -> bool:
-    pass
+    for v in get_ellipse_vertices(ellipse):
+        if not is_in_min_max_xy(v, min_max):
+            return False
+    return True
 
 def run_ellipse_processing(
     dlc_output_h5_path: pathlib.Path, 
