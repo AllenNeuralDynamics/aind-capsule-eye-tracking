@@ -2,4 +2,9 @@
 set -ex
 
 # This is the master script for the capsule. When you click "Reproducible Run", the code in this file will execute.
-python -u run.py "$@"
+python -u run_capsule.py "$@"
+
+# The previous version of this file was commented-out and follows below:
+#
+# python -u run.py "$@"
+# 
