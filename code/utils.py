@@ -35,7 +35,7 @@ MIN_LIKELIHOOD_THRESHOLD = 0.01
 MIN_NUM_POINTS_FOR_ELLIPSE_FITTING = 6 # at least 6 tracked points for annotation quality data
 NUM_NAN_FRAMES_EITHER_SIDE_OF_INVALID_EYE_FRAME = 2
 """number of frames to set to nan for pupil & cr on either side of an invalid eye
-ellipse - this is to avoid during a putative blink, which gives bad results.
+ellipse - this is discard fits when the eyelid is closing or opening, which gives bad results.
 - see visual behavior whitepaper
 https://portal.brain-map.org/explore/circuits/visual-behavior-2p
 """
@@ -113,21 +113,28 @@ def get_values_from_row(row: AnnotationData, annotation: Annotation, body_part: 
 class InvalidEigenVectors(ValueError):
     pass
 
-def get_ellipses_from_row(row: AnnotationData) -> dict[BodyPart, Ellipse]:
+def get_ellipses_from_row(row: AnnotationData, bounds: MinMax) -> dict[BodyPart, Ellipse]:
     ellipses = dict.fromkeys(DLC_LABELS, Ellipse())
     assert DLC_LABELS[0] == 'eye', f"expected `eye` to be first in {DLC_LABELS=}"
     for body_part in DLC_LABELS:
         arrays = {annotation: get_values_from_row(row, annotation, body_part) for annotation in ANNOTATION_PROPERTIES}
+        in_bounds = np.array([
+            is_in_min_max_xy(x, y, bounds)
+            for x, y in zip(arrays["x"], arrays["y"])
+        ])
         likely = arrays["likelihood"] > MIN_LIKELIHOOD_THRESHOLD
         if len(arrays["likelihood"][likely]) < MIN_NUM_POINTS_FOR_ELLIPSE_FITTING: 
             continue
         try:
-            ellipse = fit_ellipse([arrays["x"][likely], arrays["y"][likely]])
+            ellipse = fit_ellipse([arrays["x"][likely & in_bounds], arrays["y"][likely & in_bounds]])
         except InvalidEigenVectors:
             continue
         if body_part == 'eye' and is_ellipse_invalid(ellipse):
             # if eye ellipse is invalid, all other ellipses are invalid
             break
+        # if body_part == 'eye' not is_ellipse_in_min_max_xy(ellipse, bounds):
+        #     # eye ellipse should not extend beyond bounds 
+        #     break
         if body_part != 'eye':
             assert not is_ellipse_invalid(ellipses['eye'])
             if not is_in_ellipse(ellipse.center_x, ellipse.center_y, ellipses['eye']):
@@ -136,6 +143,8 @@ def get_ellipses_from_row(row: AnnotationData) -> dict[BodyPart, Ellipse]:
         ellipses[body_part] = ellipse
     return ellipses
 
+def is_ellipse_in_min_max_xy(ellipse: Ellipse, min_max: MinMax) -> bool:
+    pass
 
 def run_ellipse_processing(
     dlc_output_h5_path: pathlib.Path, 
@@ -160,6 +169,7 @@ def get_ellipses_from_dlc_in_parallel(
 ) -> dict[BodyPart, tuple[Ellipse, ...]]:
 
     dlc_df = get_dlc_df(dlc_output_h5_path)
+    dlc_bounds = get_dlc_min_max_xy(dlc_output_h5_path)
     results: dict[BodyPart, list[Ellipse | None]] = {}
     future_to_index: dict[concurrent.futures.Future, int] = {}
     if executor is None:
@@ -176,7 +186,7 @@ def get_ellipses_from_dlc_in_parallel(
                 ascii=True, 
             ):
             future_to_index[
-                executor.submit(get_ellipses_from_row, row.to_dict())
+                executor.submit(get_ellipses_from_row, row.to_dict(), dlc_bounds)
             ] = idx 
         for future in tqdm.tqdm(
                 concurrent.futures.as_completed(future_to_index.keys()), 
@@ -248,7 +258,7 @@ def get_filtered_ellipses(
             continue
 
         
-        if eye != invalid:
+        if is_ellipse_invalid(eye):
             for body_part in DLC_LABELS[1:]:
                 if is_ellipse_invalid(_body_part_to_ellipses[body_part][idx]):
                     continue

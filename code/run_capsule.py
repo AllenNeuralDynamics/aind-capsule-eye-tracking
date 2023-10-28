@@ -14,8 +14,8 @@ import utils
 
 REUSE_DLC_OUTPUT_H5_IN_ASSET = True
 """Instead of re-generating DLC h5 file, use one in a data asset"""
- 
-if __name__ == "__main__":
+
+def main():
 
     # process first eye video found
     input_video_file_path: pathlib.Path = next(
@@ -145,3 +145,7 @@ if __name__ == "__main__":
     if REUSE_DLC_OUTPUT_H5_IN_ASSET:
         for file in temp_files:
             file.unlink()
+
+    
+if __name__ == "__main__":
+    main()
