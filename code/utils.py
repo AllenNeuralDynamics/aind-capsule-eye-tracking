@@ -31,9 +31,9 @@ AnnotationData: TypeAlias = Dict[Tuple[BodyPart, Annotation], float]
 DLC_LABELS: tuple[BodyPart, ...] = ('eye', 'pupil', 'cr') # order matters for ellipse fitting
 ANNOTATION_PROPERTIES: tuple[Annotation, ...] = ('x', 'y', 'likelihood')
 
-MIN_LIKELIHOOD_THRESHOLD = 0.01
+MIN_LIKELIHOOD_THRESHOLD = 0.2
 MIN_NUM_POINTS_FOR_ELLIPSE_FITTING = 6 # at least 6 tracked points for annotation quality data
-NUM_NAN_FRAMES_EITHER_SIDE_OF_INVALID_EYE_FRAME = 2
+NUM_NAN_FRAMES_EITHER_SIDE_OF_INVALID_EYE_FRAME = 0
 """number of frames to set to nan for pupil & cr on either side of an invalid eye
 ellipse - this is discard fits when the eyelid is closing or opening, which gives bad results.
 - see visual behavior whitepaper
@@ -129,14 +129,19 @@ def get_ellipses_from_row(row: AnnotationData, bounds: MinMax) -> dict[BodyPart,
             ellipse = fit_ellipse([arrays["x"][likely & in_bounds], arrays["y"][likely & in_bounds]])
         except InvalidEigenVectors:
             continue
-        if body_part == 'eye' and is_ellipse_invalid(ellipse):
+        if (
+            (body_part == 'eye' and is_ellipse_invalid(ellipse))
+            or 
+            (body_part != 'eye' and is_ellipse_invalid(ellipses['eye']))
+        ):
             # if eye ellipse is invalid, all other ellipses are invalid
             break
         if body_part == 'eye' and not is_ellipse_in_min_max_xy(ellipse, bounds):
             # eye ellipse should not extend beyond bounds 
+            ellipses['eye'] = invalid
             break
         if body_part != 'eye':
-            assert not is_ellipse_invalid(ellipses['eye'])
+            assert not is_ellipse_invalid(ellipses['eye']), f"expected valid eye ellipse: {ellipses['eye']=}"
             if not is_in_ellipse(ellipse.center_x, ellipse.center_y, ellipses['eye']):
                 # cr or pupil centers outside eye ellipse are invalid
                 continue            
