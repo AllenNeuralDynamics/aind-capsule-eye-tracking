@@ -5,6 +5,8 @@ import pathlib
 import random
 from typing import Iterable, Sequence
 
+import moviepy.editor
+import moviepy.video.io.bindings
 import cv2
 import matplotlib.pyplot as plt
 import matplotlib.patches
@@ -49,6 +51,36 @@ def plot_video_frame(
     )
     return fig
 
+def write_video_with_ellipses_and_dlc_points(
+    video_path: str | pathlib.Path, 
+    all_ellipses: dict[utils.BodyPart, Sequence[utils.Ellipse] | pd.DataFrame],
+    dlc_output_h5_path: str | pathlib.Path,
+    dest_path: pathlib.Path | None = None,
+):
+    # modified from allensdk/brain_observatory/eye_tracking/stage_4/DLC_Ellipse_Video.py
+    fps = utils.get_dlc_pickle_metadata(dlc_output_h5_path)['fps']
+    video_path = pathlib.Path(video_path)
+    video_data = utils.get_video_data(video_path)
+    def make_frame(time_s):      
+        frame_index = round(time_s * fps)
+        return moviepy.video.io.bindings.mplfig_to_npimage(
+            plot_video_frame_with_ellipses(
+                video_path=video_data,
+                all_ellipses=all_ellipses,
+                dlc_output_h5_path=dlc_output_h5_path,
+                frame_index=frame_index,
+            )
+        )
+    clip = moviepy.editor.VideoFileClip(video_path.as_posix())
+    animation = moviepy.editor.VideoClip(make_frame, duration=clip.duration)#.resize(newsize=clip.size)
+    animation.write_videofile(
+        pathlib.Path(dest_path or utils.RESULTS_PATH / video_path.name).as_posix(),
+        fps=fps,
+        audio=False,
+        preset='ultrafast',
+        threads=16,
+    )
+
 def plot_video_frame_with_pupil_path(
     video_path: str | pathlib.Path | cv2.VideoCapture, 
     pupil_ellipses: Sequence[utils.Ellipse] | pd.DataFrame, 
@@ -64,18 +96,31 @@ def plot_video_frame_with_pupil_path(
     ax.set_title('path of estimated pupil center across all frames', fontsize=8)
     return fig
 
+def smooth(a: np.array, fps: int):
+    diff = np.insert(np.abs(np.diff(a)), 0, np.nan)
+    diff /= a
+    diff *= fps
+    outlier_indices = diff > 3
+    a[outlier_indices] = np.nan
+    import scipy.signal
+    return scipy.signal.savgol_filter(
+        a, window_length=3, polyorder=1,
+    )
+
 def plot_pupil_area(
     pupil_ellipses: Iterable[utils.Ellipse] | pd.DataFrame, 
+    fps=30,
     ) -> plt.Figure:
-    fig = plt.figure(figsize=(6,2))
+    fig = plt.figure(figsize=(6, 2))
     
-    areas = utils.get_pupil_area_pixels(pupil_ellipses)
-    threshold = np.percentile(areas[np.isfinite(areas)], 99)
-    outlier_indices = areas > threshold
-
-    areas[outlier_indices] = np.nan
-    plt.plot(areas, color=ELLIPSE_COLORS['pupil'])
+    area = utils.get_pupil_area_pixels(pupil_ellipses)
+    # threshold = np.percentile(area[np.isfinite(area)], 99)
+    # outlier_indices = area > threshold
+    # area[outlier_indices] = np.nan
+    plt.plot(area, color='grey', linewidth=.1)
+    plt.plot(smooth(area, fps), color=ELLIPSE_COLORS['pupil'], linewidth=.3)
     ax = plt.gca()
+    ax.margins(0, 0)
     ax.set_ylim((0, ax.get_ylim()[-1]))
     ax.set_xlabel('frame index')
     ax.set_ylabel('pupil area (pixels$^2$)')

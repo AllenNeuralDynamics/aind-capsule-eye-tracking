@@ -32,7 +32,8 @@ DLC_LABELS: tuple[BodyPart, ...] = ('eye', 'pupil', 'cr') # order matters for el
 ANNOTATION_PROPERTIES: tuple[Annotation, ...] = ('x', 'y', 'likelihood')
 
 MIN_LIKELIHOOD_THRESHOLD = 0.2
-MIN_NUM_POINTS_FOR_ELLIPSE_FITTING = 6 # at least 6 tracked points for annotation quality data
+MIN_NUM_POINTS_FOR_ELLIPSE_FITTING = 6
+# at least 6 tracked points at 0.2 min likelihood for annotation quality data - from original peterl/waynew
 NUM_NAN_FRAMES_EITHER_SIDE_OF_INVALID_EYE_FRAME = 0
 """number of frames to set to nan for pupil & cr on either side of an invalid eye
 ellipse - this is discard fits when the eyelid is closing or opening, which gives bad results.
@@ -40,9 +41,11 @@ ellipse - this is discard fits when the eyelid is closing or opening, which give
 https://portal.brain-map.org/explore/circuits/visual-behavior-2p
 """
 
+VIDEO_FILE_GLOB_PATTERN = '*[eE]ye*'
+
 def get_eye_video_paths() -> Iterator[pathlib.Path]:
     yield from (
-        p for p in DATA_PATH.rglob('*[eE]ye*') 
+        p for p in DATA_PATH.rglob(VIDEO_FILE_GLOB_PATTERN) 
         if (
             DLC_PROJECT_PATH not in p.parents
             and p.suffix in VIDEO_SUFFIXES
@@ -138,7 +141,7 @@ def get_ellipses_from_row(row: AnnotationData, bounds: MinMax) -> dict[BodyPart,
             break
         if body_part == 'eye' and not is_ellipse_in_min_max_xy(ellipse, bounds):
             # eye ellipse should not extend beyond bounds 
-            ellipses['eye'] = invalid
+            ellipses['eye'] = Ellipse()
             break
         if body_part != 'eye':
             assert not is_ellipse_invalid(ellipses['eye']), f"expected valid eye ellipse: {ellipses['eye']=}"

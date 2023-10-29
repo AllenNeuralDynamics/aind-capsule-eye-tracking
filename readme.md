@@ -37,13 +37,12 @@
 - source code for **`deeplabcut.analyze_videos()`**: https://github.com/DeepLabCut/DeepLabCut/blob/main/deeplabcut/pose_estimation_tensorflow/predict_videos.py#L268
 
 ## TODO
-- fix index error (0 out of bounds, axis 1)
-- fix startup warnings
 - read rig.json for parameters
   - check for pixel^2 -> cm^2 conversion
 - ? output DLC annotation timeseries to NWB.acquisition
 - output processed BehaviorSeries/Events to NWB.processing
 - store unobserved pupil frames (blinks or stress) in nwb
+- add to required metadata to processing.json
 - ? use rig info to compute gaze location on monitor
 - create asset from results automatically
 
@@ -56,4 +55,6 @@
 - parallelize ellipse-fitting to use all 16 cores
 - output random selection of video frames with annotated points + ellipses overlaid
 - compute pupil area timeseries
-
+- fix index error (0 out of bounds, axis 1)
+- fix startup warnings
+- additional validation of ellipses (within frame, pupil/cr within eye)

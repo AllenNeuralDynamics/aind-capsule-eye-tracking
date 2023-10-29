@@ -12,6 +12,8 @@ import qc
 import tensorflow as tf
 import utils
 
+SAVE_ANNOTATED_VIDEO = False
+"""Currently very slow (~3 fps)"""
 REUSE_DLC_OUTPUT_H5_IN_ASSET = True
 """Instead of re-generating DLC h5 file, use one in a data asset"""
 
@@ -19,8 +21,10 @@ def main():
 
     # process first eye video found
     input_video_file_path: pathlib.Path = next(
-        utils.get_eye_video_paths()
+        utils.get_eye_video_paths(), None
         )
+    if input_video_file_path is None:
+        raise FileNotFoundError("No video files found matching {utils.VIDEO_FILE_GLOB_PATTERN=}, {utils.VIDEO_SUFFIXES=}")
     print(f"Reading video: {input_video_file_path}")
     
     # phase 1: track points in video and generate h5 file ------------------------- #
@@ -141,7 +145,31 @@ def main():
                 bbox_inches="tight",
                 pad_inches=0,
             )
-        
+    
+    # save parameters used
+    print("Writing (incomplete) processing.json")
+    (utils.RESULTS_PATH / "processing.json").write_text(
+        json.dumps({
+            "data_processes": {
+                "parameters": {
+                    "min_liklelihood_threshold": utils.MIN_LIKELIHOOD_THRESHOLD,
+                    "min_num_points_for_ellipse_fitting": utils.MIN_NUM_POINTS_FOR_ELLIPSE_FITTING,
+                    "num_nan_frames_either_side_of_invalid_eye_frame": utils.NUM_NAN_FRAMES_EITHER_SIDE_OF_INVALID_EYE_FRAME,
+                }
+            }
+        }, indent=4)
+    )
+
+    if SAVE_ANNOTATED_VIDEO:
+        output_video_path = utils.RESULTS_PATH / input_video_file_path.name
+        print(f"Writing annotated video file to {output_video_path}")
+        qc.write_video_with_ellipses_and_dlc_points(
+            video_path=input_video_file_path, 
+            all_ellipses=body_part_to_df,
+            dlc_output_h5_path=dlc_output_h5_path,
+            dest_path=output_video_path,
+        )
+
     if REUSE_DLC_OUTPUT_H5_IN_ASSET:
         for file in temp_files:
             file.unlink()
