@@ -105,6 +105,8 @@ def main():
     print(f"Writing plot of pupil area to {utils.QC_PATH}")
     qc.plot_pupil_area(
         pupil_ellipses=body_part_to_df['pupil'],
+        pixel_to_cm=None,
+        fps=utils.get_dlc_pickle_metadata(dlc_output_h5_path)['fps'],
         ).savefig(
             utils.QC_PATH / f"{input_video_file_path.stem}_pupil_area.png",
             dpi=300,

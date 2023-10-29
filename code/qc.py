@@ -109,21 +109,19 @@ def smooth(a: np.array, fps: int):
 
 def plot_pupil_area(
     pupil_ellipses: Iterable[utils.Ellipse] | pd.DataFrame, 
-    fps=30,
+    pixel_to_cm: float | None = None,
+    fps: float | None = None,
     ) -> plt.Figure:
     fig = plt.figure(figsize=(6, 2))
-    
-    area = utils.get_pupil_area_pixels(pupil_ellipses)
-    # threshold = np.percentile(area[np.isfinite(area)], 99)
-    # outlier_indices = area > threshold
-    # area[outlier_indices] = np.nan
+    area = utils.get_pupil_area_pixels(pupil_ellipses) * (pixel_to_cm or 1)
     plt.plot(area, color='grey', linewidth=.1)
-    plt.plot(smooth(area, fps), color=ELLIPSE_COLORS['pupil'], linewidth=.3)
+    if fps:
+        plt.plot(smooth(area, fps), color=ELLIPSE_COLORS['pupil'], linewidth=.3)
     ax = plt.gca()
     ax.margins(0, 0)
     ax.set_ylim((0, ax.get_ylim()[-1]))
     ax.set_xlabel('frame index')
-    ax.set_ylabel('pupil area (pixels$^2$)')
+    ax.set_ylabel(f'pupil area ({"pixels" if not pixel_to_cm else "cm"}$^2$)')
     return fig
 
 def plot_video_frame_with_dlc_points(

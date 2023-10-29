@@ -34,9 +34,9 @@ ANNOTATION_PROPERTIES: tuple[Annotation, ...] = ('x', 'y', 'likelihood')
 MIN_LIKELIHOOD_THRESHOLD = 0.2
 MIN_NUM_POINTS_FOR_ELLIPSE_FITTING = 6
 # at least 6 tracked points at 0.2 min likelihood for annotation quality data - from original peterl/waynew
-NUM_NAN_FRAMES_EITHER_SIDE_OF_INVALID_EYE_FRAME = 0
-"""number of frames to set to nan for pupil & cr on either side of an invalid eye
-ellipse - this is discard fits when the eyelid is closing or opening, which gives bad results.
+NUM_NAN_FRAMES_EITHER_SIDE_OF_INVALID_EYE_FRAME = 2
+"""number of frames to set to nan for pupil & cr on either side of an invalid eye ellipse 
+- discards fits when the eyelid is closing or opening, which gives bad results
 - see visual behavior whitepaper
 https://portal.brain-map.org/explore/circuits/visual-behavior-2p
 """
