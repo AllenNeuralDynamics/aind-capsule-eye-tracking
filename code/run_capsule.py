@@ -15,13 +15,14 @@ import utils
 SAVE_ANNOTATED_VIDEO = False
 """Currently very slow (~3 fps)"""
 REUSE_DLC_OUTPUT_H5_IN_ASSET = True
-"""Instead of re-generating DLC h5 file, use one in a data asset"""
+"""Instead of re-generating DLC h5 file, use one in a data asset - for quickly testing
+ellipse fitting, qc"""
 
 def main():
 
     # process first eye video found
     input_video_file_path: pathlib.Path = next(
-        utils.get_eye_video_paths(), None
+        utils.get_video_paths(), None
         )
     if input_video_file_path is None:
         raise FileNotFoundError("No video files found matching {utils.VIDEO_FILE_GLOB_PATTERN=}, {utils.VIDEO_SUFFIXES=}")

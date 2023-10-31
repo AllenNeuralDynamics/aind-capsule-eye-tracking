@@ -6,8 +6,8 @@ import copy
 import functools
 import pathlib
 import pickle
-from typing import (Dict, Iterable, Iterator, Literal, Mapping,
-                    NamedTuple, Sequence, Tuple)
+from typing import (Dict, Iterable, Iterator, Literal, Mapping, NamedTuple,
+                    Sequence, Tuple)
 
 import cv2
 import numpy as np
@@ -43,7 +43,7 @@ https://portal.brain-map.org/explore/circuits/visual-behavior-2p
 
 VIDEO_FILE_GLOB_PATTERN = '*[eE]ye*'
 
-def get_eye_video_paths() -> Iterator[pathlib.Path]:
+def get_video_paths() -> Iterator[pathlib.Path]:
     yield from (
         p for p in DATA_PATH.rglob(VIDEO_FILE_GLOB_PATTERN) 
         if (
