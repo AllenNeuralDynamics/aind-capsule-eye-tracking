@@ -25,7 +25,7 @@ def main():
         utils.get_video_paths(), None
         )
     if input_video_file_path is None:
-        raise FileNotFoundError("No video files found matching {utils.VIDEO_FILE_GLOB_PATTERN=}, {utils.VIDEO_SUFFIXES=}")
+        raise FileNotFoundError(f"No video files found matching {utils.VIDEO_FILE_GLOB_PATTERN=}, {utils.VIDEO_SUFFIXES=}")
     print(f"Reading video: {input_video_file_path}")
     
     # phase 1: track points in video and generate h5 file ------------------------- #
