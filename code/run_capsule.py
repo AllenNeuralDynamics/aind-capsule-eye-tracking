@@ -25,6 +25,7 @@ def main():
         utils.get_video_paths(), None
         )
     if input_video_file_path is None:
+        print(tuple(utils.DATA_PATH.rglob('*')))
         raise FileNotFoundError(f"No video files found matching {utils.VIDEO_FILE_GLOB_PATTERN=}, {utils.VIDEO_SUFFIXES=}")
     print(f"Reading video: {input_video_file_path}")
     
