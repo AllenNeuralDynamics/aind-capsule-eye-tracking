@@ -19,7 +19,6 @@ REUSE_DLC_OUTPUT_H5_IN_ASSET = True
 ellipse fitting, qc"""
 
 def main():
-    # 
     # process first eye video found
     input_video_file_path: pathlib.Path = next(
         utils.get_video_paths(), None
