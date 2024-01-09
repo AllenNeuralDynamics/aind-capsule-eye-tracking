@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import npc_session
+import json
+
 import concurrent.futures
 import contextlib
 import copy
@@ -42,6 +45,19 @@ https://portal.brain-map.org/explore/circuits/visual-behavior-2p
 """
 
 VIDEO_FILE_GLOB_PATTERN = '*[eE]ye*'
+
+def write_json_with_session_id() -> None:
+    session_path = tuple(DATA_PATH.glob('ecephys*'))
+
+    if not session_path:
+        raise ValueError('No data asset attached')
+    
+    session_path = session_path[0]
+    session = npc_session.SessionRecord(str(session_path))
+
+    session_dict = {'session_id': session}
+    with open(RESULTS_PATH / f'{session}.json', 'w') as f:
+        json.dump(session_dict, f)
 
 def get_video_paths() -> Iterator[pathlib.Path]:
     yield from (
@@ -468,3 +484,6 @@ def compute_circular_areas(ellipse_params: pd.DataFrame) -> pd.Series:
     # assume that it is the pupil circle radius.
     radii = ellipse_params[["height", "width"]].max(axis=1)
     return np.pi * radii * radii
+
+if __name__ == '__main__':
+    write_json_with_session_id()
