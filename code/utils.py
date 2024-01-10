@@ -46,17 +46,40 @@ https://portal.brain-map.org/explore/circuits/visual-behavior-2p
 
 VIDEO_FILE_GLOB_PATTERN = '*[eE]ye*'
 
-def write_json_with_session_id() -> None:
-    session_path = tuple(DATA_PATH.glob('ecephys*'))
+def parse_session_id() -> str:
+    """
+    parses the session id following the aind format, test assumes that raw data asset 686740_2023-10-26 is attached
+    >>> parse_session_id()
+    'ecephys_686740_2023-10-26_12-29-08'
+    """
+    session_paths = tuple(DATA_PATH.glob('*'))
 
-    if not session_path:
-        raise ValueError('No data asset attached')
+    if not session_paths or len(session_paths) == 1:
+        raise FileNotFoundError('No session data assets attached')
     
-    session_path = session_path[0]
-    session = npc_session.SessionRecord(str(session_path))
+    session_id = None
+    for session_path in session_paths:
+        try: # avoid parsing model folder, better way to do this?
+            session_id = npc_session.parsing.extract_aind_session_id(session_path.stem)
+        except ValueError:
+            pass
 
-    session_dict = {'session_id': session}
-    with open(RESULTS_PATH / f'{session}.json', 'w') as f:
+    if session_id is None:
+        raise FileNotFoundError('No data asset attached that follows aind session format')
+    
+    return session_id
+
+def write_json_with_session_id() -> None:
+    """
+    Test assumes raw data asset 686740_2023-10-26 is attached
+    >>> write_json_with_session_id()
+    >>> path = tuple(RESULTS_PATH.glob('*.json'))[0]
+    >>> path.as_posix()
+    '/results/ecephys_686740_2023-10-26_12-29-08.json'
+    """
+    session_id = parse_session_id()
+    session_dict = {'session_id': session_id}
+    with open(RESULTS_PATH / f'{session_id}.json', 'w') as f:
         json.dump(session_dict, f)
 
 def get_video_paths() -> Iterator[pathlib.Path]:
@@ -170,7 +193,7 @@ def get_ellipses_from_row(row: AnnotationData, bounds: MinMax) -> dict[BodyPart,
 def get_ellipse_vertices(ellipse: Ellipse) -> tuple[tuple[float, float], ...]:
     """
     >>> get_ellipse_vertices(Ellipse(0, 0, 3, 5, 0))
-    ((3, 0), (0, 5), (-3, -0), (-0, -5)) 
+    ((3.0, 0.0), (3.061616997868383e-16, 5.0), (-3.0, 0.0), (-3.061616997868383e-16, -5.0))
     """
     e = ellipse
     x1, y1 = e.width * np.cos(e.phi), e.width * np.sin(e.phi)
@@ -486,4 +509,8 @@ def compute_circular_areas(ellipse_params: pd.DataFrame) -> pd.Series:
     return np.pi * radii * radii
 
 if __name__ == '__main__':
-    write_json_with_session_id()
+    import doctest
+
+    doctest.testmod(
+        optionflags=(doctest.IGNORE_EXCEPTION_DETAIL | doctest.NORMALIZE_WHITESPACE)
+    )
