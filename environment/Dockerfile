@@ -1,4 +1,4 @@
-# hash:sha256:915c50d63486969f02a47f673f66a5b92731cf106aaa7e6313aa82bc98731cd7
+# hash:sha256:540bba9692d81cf7b2af9738fc42bbfbb968db4c8899b957e3b46cd92bc180f5
 FROM registry.codeocean.allenneuraldynamics.org/codeocean/tensorflow:2.11-python3.10-cuda11.7.0-runtime-ubuntu22.04
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -23,11 +23,4 @@ RUN conda install -y \
 RUN pip install -U --no-cache-dir \
     deeplabcut[tf]==2.3.6 \
     moviepy==1.0.3 \
-    npc-session==0.1.31
-
-ADD "https://github.com/coder/code-server/releases/download/v4.9.0/code-server-4.9.0-linux-amd64.tar.gz" /.code-server/code-server.tar.gz
-	
-RUN cd /.code-server \
-	&& tar -xvf code-server.tar.gz \
-	&& rm code-server.tar.gz \
-	&& ln -s /.code-server/code-server-4.9.0-linux-amd64/bin/code-server  /usr/bin/code-server
+    npc-session==0.1.32
