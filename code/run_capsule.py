@@ -19,16 +19,17 @@ REUSE_DLC_OUTPUT_H5_IN_ASSET = True
 ellipse fitting, qc"""
 
 def main():
-    utils.write_json_with_session_id()
     # process first eye video found
     input_video_file_path: pathlib.Path = next(
         utils.get_video_paths(), None
         )
+    
+
     if input_video_file_path is None:
         print(tuple(utils.DATA_PATH.rglob('*')))
         raise FileNotFoundError(f"No video files found matching {utils.VIDEO_FILE_GLOB_PATTERN=}, {utils.VIDEO_SUFFIXES=}")
     print(f"Reading video: {input_video_file_path}")
-    
+    utils.write_json_with_session_id()
     # phase 1: track points in video and generate h5 file ------------------------- #
 
     if REUSE_DLC_OUTPUT_H5_IN_ASSET:
