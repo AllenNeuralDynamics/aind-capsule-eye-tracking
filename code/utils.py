@@ -53,7 +53,7 @@ def parse_session_id() -> str:
     'ecephys_686740_2023-10-26_12-29-08'
     """
     session_paths = tuple(DATA_PATH.glob('*'))
-
+    print(session_paths)
     if not session_paths or len(session_paths) == 1:
         raise FileNotFoundError('No session data assets attached')
     
