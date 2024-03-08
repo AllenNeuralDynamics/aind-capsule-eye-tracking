@@ -71,6 +71,8 @@ def main():
         output_file_path=output_file_path,
     )
     
+    for body_part in utils.DLC_LABELS:
+        utils.write_area_and_average_confidence(dlc_output_h5_path, body_part, body_part_to_df[body_part])
     # qc plots -------------------------------------------------------------------- #
 
     utils.QC_PATH.mkdir(exist_ok=True, parents=True)

@@ -104,6 +104,16 @@ def get_dlc_df(dlc_output_h5_path: str | pathlib.Path) -> pd.DataFrame:
     # df has MultiIndex 
     return getattr(pd.read_hdf(dlc_output_h5_path), get_dlc_pickle_metadata(dlc_output_h5_path)['Scorer']) 
 
+def write_area_and_average_confidence(dlc_output_h5_path: pathlib.Path, body_part: BodyPart, body_part_to_df: pd.DataFrame) -> None:
+    df_dlc = get_dlc_df(dlc_output_h5_path)
+    get_keys = [[body_part + str(i), 'likelihood'] for i in range(1, 13)]
+    avg_confidence = np.nanmean(df_dlc[list(get_keys)].values, axis = 1)
+    body_part_to_df[f'{body_part}_average_confidence'] = avg_confidence
+    body_part_to_df[f'{body_part}_area'] = get_pupil_area_pixels(body_part_to_df)
+    body_part_to_df[f'{body_part}_is_bad_frame'] = pd.isna(body_part_to_df['center_x'])
+
+    body_part_to_df.to_hdf(RESULTS_PATH / 'ellipses_processed.h5', key=body_part, mode='a')
+
 def get_dlc_output_h5_path(
     input_video_file_path: str | pathlib.Path, 
     output_dir_path: str | pathlib.Path = RESULTS_PATH,
@@ -227,7 +237,6 @@ def run_ellipse_processing(
     for body_part in DLC_LABELS:
         df = pd.DataFrame.from_records(body_part_to_ellipses[body_part], columns=Ellipse._fields)
         body_part_to_df[body_part] = df
-        df[f'{body_part}_area'] = get_pupil_area_pixels(body_part_to_df[body_part])
         df.to_hdf(output_file_path, key=body_part, mode='a')       
       
     return body_part_to_df
@@ -510,9 +519,13 @@ def compute_circular_areas(ellipse_params: pd.DataFrame) -> pd.Series:
     return np.pi * radii * radii
 
 if __name__ == '__main__':
-    dlc_output_h5_path = pathlib.Path('/root/capsule/data/ecephys_676909_2023-12-12_13-04-37_dlc_eye1/Eye_20231212T130452DLC_resnet50_universal_eye_trackingJul10shuffle1_1030000.h5')
-    output_file_path = pathlib.Path('/results/ellipse_output.h5')
-    run_ellipse_processing(dlc_output_h5_path, output_file_path)
+    dlc_output_h5_path = pathlib.Path('/root/capsule/data/ecephys_676909_2023-12-12_13-04-37_dlc_eye/Eye_20231212T130452DLC_resnet50_universal_eye_trackingJul10shuffle1_1030000.h5')
+    #output_file_path = pathlib.Path('/results/ellipse_output.h5')
+    output_file_path = pathlib.Path('/root/capsule/data/ecephys_676909_2023-12-12_13-04-37_dlc_eye/ellipses.h5')
+
+    for label in DLC_LABELS:
+        body_part_to_df = pd.read_hdf(output_file_path, key=label)
+        write_area_and_average_confidence(dlc_output_h5_path, label, body_part_to_df)
 
     import doctest
 
