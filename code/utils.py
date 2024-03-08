@@ -227,6 +227,7 @@ def run_ellipse_processing(
     for body_part in DLC_LABELS:
         df = pd.DataFrame.from_records(body_part_to_ellipses[body_part], columns=Ellipse._fields)
         body_part_to_df[body_part] = df
+        df[f'{body_part}_area'] = get_pupil_area_pixels(body_part_to_df[body_part])
         df.to_hdf(output_file_path, key=body_part, mode='a')       
       
     return body_part_to_df
@@ -509,6 +510,10 @@ def compute_circular_areas(ellipse_params: pd.DataFrame) -> pd.Series:
     return np.pi * radii * radii
 
 if __name__ == '__main__':
+    dlc_output_h5_path = pathlib.Path('/root/capsule/data/ecephys_676909_2023-12-12_13-04-37_dlc_eye1/Eye_20231212T130452DLC_resnet50_universal_eye_trackingJul10shuffle1_1030000.h5')
+    output_file_path = pathlib.Path('/results/ellipse_output.h5')
+    run_ellipse_processing(dlc_output_h5_path, output_file_path)
+
     import doctest
 
     doctest.testmod(
