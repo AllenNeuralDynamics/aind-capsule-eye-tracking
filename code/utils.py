@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import npc_session
 import json
+import datetime
 
 import concurrent.futures
 import contextlib
@@ -14,9 +15,25 @@ from typing import (Dict, Iterable, Iterator, Literal, Mapping, NamedTuple,
 
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
+from PIL import Image
 import pandas as pd
 import tqdm
 from typing_extensions import TypeAlias
+
+from aind_data_schema.core.data_description import (
+    Organization,
+    Modality,
+    Modality,
+    Platform,
+    Funding,
+    DataLevel,
+)
+from aind_data_schema_models.pid_names import PIDName
+
+from aind_data_schema.core.quality_control import QualityControl, QCEvaluation, QCMetric, QCStatus, Status, Stage
+from aind_data_schema_models.modalities import Modality
+from aind_qcportal_schema.metric_value import CheckboxMetric
 
 DATA_PATH = pathlib.Path('/data/')
 RESULTS_PATH = pathlib.Path('/results/')
@@ -45,6 +62,132 @@ https://portal.brain-map.org/explore/circuits/visual-behavior-2p
 """
 
 VIDEO_FILE_GLOB_PATTERN = '*[eE]ye*'
+
+def read_and_make_qc_figure(scale:int=10) -> None:
+    image_paths = sorted(tuple(RESULTS_PATH.glob('qc/*.png')))
+    if not image_paths:
+        raise FileNotFoundError(f'No images found in {RESULTS_PATH}')
+    
+    fig, ax = plt.subplots(1, len(image_paths))
+
+    index = 0
+    for path in image_paths:
+        image = np.array(Image.open(path))
+        ax[index].figure.set_size_inches(scale, len(image_paths) * scale)
+        ax[index].imshow(image)
+        index += 1
+    
+    fig.savefig(RESULTS_PATH / 'dlc_eye_qc.png')
+
+def get_number_of_frames_from_pickle(dlc_output_h5_path: str | pathlib.Path) -> int:
+    meta_pickle = get_dlc_pickle_metadata(dlc_output_h5_path)
+    return meta_pickle['nframes']
+
+def is_failed_fits(dlc_output_h5_path: str | pathlib.Path) -> tuple[bool, list]:
+    number_of_frames = get_number_of_frames_from_pickle(dlc_output_h5_path)
+    percentage_of_failed_fits = []
+
+    for feature in DLC_LABELS:
+        feature_path = tuple(RESULTS_PATH.glob(f'qc/*/{feature}.json'))
+        if not feature_path:
+            raise FileNotFoundError(f'No ellipse data json found for {feature}')
+
+        with open(feature_path[0]) as f:
+            feature_json = json.load(f)
+            percentage_of_failed_fits.append(len(feature_json['frames_without_ellipses']) / number_of_frames)
+
+    return len([percentage for percentage in percentage_of_failed_fits if percentage > 0.1]) > 0, percentage_of_failed_fits
+
+def write_qc_json(dlc_output_h5_path: str | pathlib.Path) -> None:
+    qc_metric_video = QCMetric(name='Eye Tracking qc images', description='Evaluation of dlc eye tracking model', reference=f'/dlc_eye_qc.png',
+                         value=CheckboxMetric(
+                            value="Placeholder CheckboxMetric Value",
+                            # Possible options for the metric
+                            options=[
+                                'No problems detected',
+                                'Video too dim',
+                                'Other Issues'
+                            ],
+                            status=[
+                                Status.PASS,
+                                Status.FAIL,
+                                Status.FAIL,
+                            ]
+                         ),
+                        status_history=[                                
+                            QCStatus(
+                                evaluator='',
+                                timestamp=datetime.datetime.now(),
+                                # Requires manual annotation
+                                status=Status.PENDING
+                            )
+                        ]
+                )
+    
+    is_failed, percentages = is_failed_fits(dlc_output_h5_path)
+    qc_metric_frames = QCMetric(
+        name='proportion of failed frames',
+        description='Proportion of frames that failed to fit ellipse',
+        value=percentages,
+        reference=None,
+        status_history=[
+            QCStatus(
+                evaluator='',
+                timestamp=datetime.datetime.now(),
+                status=Status.PASS if not is_failed else Status.FAIL
+            )]
+    )
+
+    qc = QualityControl(
+        notes='This is a dataset level quality control object for dlc eye tracking videos & their metadata',
+        evaluations=[
+            QCEvaluation(
+                name="DLC Eye Tracking Video Quality",
+                description="This evaluation ensures the quality of the eye tracking video",
+                stage=Stage.PROCESSING,
+                modality=Modality.from_abbreviation('behavior-videos'),
+                notes="",
+                allow_failed_metrics=False,
+                metrics=[qc_metric_frames, qc_metric_video]
+            )
+        ],
+    )
+    qc.write_standard_file(RESULTS_PATH)
+
+def get_data_description_dict() -> dict:
+    session_id = parse_session_id()
+
+    data_description_dict = {}
+    data_description_dict["creation_time"] = datetime.datetime.now()
+    data_description_dict["name"] = session_id
+    data_description_dict["institution"] = Organization.AIND
+    data_description_dict["data_level"] = DataLevel.DERIVED
+    data_description_dict["investigators"] = [PIDName(name="Unknown")]
+    data_description_dict["funding_source"] = [Funding(funder=Organization.AI)]
+    data_description_dict["modality"] = [Modality.ECEPHYS]
+    data_description_dict["platform"] = Platform.ECEPHYS
+    data_description_dict["subject_id"] = str(npc_session.SessionRecord(session_id).subject)
+    
+    return data_description_dict
+
+def get_processing_dict(start_date_time: datetime.datetime, end_date_time: datetime.datetime) -> dict:
+    data_processing_dict = {}
+    data_processing_dict["name"] = "Other"
+    data_processing_dict["software_version"] = "0.1.0"
+    data_processing_dict["start_date_time"] = str(start_date_time)
+    data_processing_dict["end_date_time"] = str(end_date_time)
+    data_processing_dict["input_location"] = DATA_PATH.as_posix()
+    data_processing_dict["output_location"] = RESULTS_PATH.as_posix()
+    data_processing_dict["code_url"] = "https://github.com/AllenNeuralDynamics/aind-capsule-eye-tracking"
+    data_processing_dict["parameters"] = {
+        "min_liklelihood_threshold": MIN_LIKELIHOOD_THRESHOLD,
+        "min_num_points_for_ellipse_fitting": MIN_NUM_POINTS_FOR_ELLIPSE_FITTING,
+        "num_nan_frames_either_side_of_invalid_eye_frame": NUM_NAN_FRAMES_EITHER_SIDE_OF_INVALID_EYE_FRAME
+    }
+    data_processing_dict["notes"] = "DeepLabCut Eye Tracking"
+    data_processing_dict["outputs"] = {}
+
+    return data_processing_dict
 
 def parse_session_id() -> str:
     """
@@ -517,18 +660,3 @@ def compute_circular_areas(ellipse_params: pd.DataFrame) -> pd.Series:
     # assume that it is the pupil circle radius.
     radii = ellipse_params[["height", "width"]].max(axis=1)
     return np.pi * radii * radii
-
-if __name__ == '__main__':
-    dlc_output_h5_path = pathlib.Path('/root/capsule/data/ecephys_676909_2023-12-12_13-04-37_dlc_eye/Eye_20231212T130452DLC_resnet50_universal_eye_trackingJul10shuffle1_1030000.h5')
-    #output_file_path = pathlib.Path('/results/ellipse_output.h5')
-    output_file_path = pathlib.Path('/root/capsule/data/ecephys_676909_2023-12-12_13-04-37_dlc_eye/ellipses.h5')
-
-    for label in DLC_LABELS:
-        body_part_to_df = pd.read_hdf(output_file_path, key=label)
-        write_area_and_average_confidence(dlc_output_h5_path, label, body_part_to_df)
-
-    import doctest
-
-    doctest.testmod(
-        optionflags=(doctest.IGNORE_EXCEPTION_DETAIL | doctest.NORMALIZE_WHITESPACE)
-    )

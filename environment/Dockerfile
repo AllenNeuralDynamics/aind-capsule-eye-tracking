@@ -1,5 +1,6 @@
-# hash:sha256:3052db5d8a1a39d54a282ae8e323d9d659906bb9dcb543ba1664ea64c15c784f
-FROM registry.codeocean.allenneuraldynamics.org/codeocean/tensorflow:2.11-python3.10-cuda11.7.0-runtime-ubuntu22.04
+# hash:sha256:42e869cad49f9b23f18361559e395377cf17e3a8b267186af8020c3fe27e2225
+ARG REGISTRY_HOST
+FROM $REGISTRY_HOST/codeocean/tensorflow:2.11-python3.10-cuda11.7.0-runtime-ubuntu22.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -21,6 +22,8 @@ RUN conda install -y \
     && conda clean -ya
 
 RUN pip install -U --no-cache-dir \
+    aind-data-schema==1.2.0 \
+    aind-qcportal-schema==0.2.3 \
     deeplabcut[tf]==2.3.6 \
     moviepy==1.0.3 \
     npc-session==0.1.32

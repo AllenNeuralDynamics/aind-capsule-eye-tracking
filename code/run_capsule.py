@@ -2,7 +2,9 @@ import contextlib
 import json
 import os
 import pathlib
+import datetime
 import random
+import shutil
 
 os.environ["DLClight"]="True" # set before importing DLC
 import deeplabcut
@@ -12,6 +14,12 @@ import qc
 import tensorflow as tf
 import utils
 
+from aind_data_schema.core.data_description import (
+    DataDescription,
+    DerivedDataDescription,
+)
+from aind_data_schema.core.processing import DataProcess, Processing, PipelineProcess
+
 SAVE_ANNOTATED_VIDEO = False
 """Currently very slow (~3 fps)"""
 REUSE_DLC_OUTPUT_H5_IN_ASSET = True
@@ -19,6 +27,8 @@ REUSE_DLC_OUTPUT_H5_IN_ASSET = True
 ellipse fitting, qc"""
 
 def main():
+    start_date_time = datetime.datetime.now()
+
     print(tuple(pathlib.Path('/data').glob('*')))
     # process first eye video found
     input_video_file_path: pathlib.Path = next(
@@ -31,8 +41,37 @@ def main():
         raise FileNotFoundError(f"No video files found matching {utils.VIDEO_FILE_GLOB_PATTERN=}, {utils.VIDEO_SUFFIXES=}")
     print(f"Reading video: {input_video_file_path}")
     utils.write_json_with_session_id()
+
+    session_json_path = tuple(utils.DATA_PATH.glob('*/session.json'))
+    procedures_json_path = tuple(utils.DATA_PATH.glob('*/procedures.json'))
+    subject_json_path = tuple(utils.DATA_PATH.glob('*/subject.json'))
+    
     # phase 1: track points in video and generate h5 file ------------------------- #
 
+    if not session_json_path:
+        print('No session json found')
+    else:
+        shutil.copy(session_json_path[0].as_posix(), (utils.RESULTS_PATH / 'session.json').as_posix())
+
+    if not subject_json_path:
+        print('No subject json found')
+    else:
+        shutil.copy(subject_json_path[0].as_posix(), (utils.RESULTS_PATH / 'subject.json').as_posix())
+
+    if not procedures_json_path:
+        print('No procedures json found')
+    else:
+        shutil.copy(procedures_json_path[0].as_posix(), (utils.RESULTS_PATH / 'procedures.json').as_posix())
+
+    data_description_dict = utils.get_data_description_dict()
+    data_description = DataDescription(**data_description_dict)
+
+    derived_data_description = DerivedDataDescription.from_data_description(
+        data_description=data_description, process_name="dlc-eye"
+    )
+    with (utils.RESULTS_PATH / "data_description.json").open("w") as f:
+        f.write(derived_data_description.model_dump_json(indent=3))
+    
     if REUSE_DLC_OUTPUT_H5_IN_ASSET:
         # get existing h5 file from data/ 
         temp_files = set()
@@ -155,20 +194,6 @@ def main():
                 pad_inches=0,
             )
     
-    # save parameters used
-    print("Writing (incomplete) processing.json")
-    (utils.RESULTS_PATH / "processing.json").write_text(
-        json.dumps({
-            "data_processes": {
-                "parameters": {
-                    "min_liklelihood_threshold": utils.MIN_LIKELIHOOD_THRESHOLD,
-                    "min_num_points_for_ellipse_fitting": utils.MIN_NUM_POINTS_FOR_ELLIPSE_FITTING,
-                    "num_nan_frames_either_side_of_invalid_eye_frame": utils.NUM_NAN_FRAMES_EITHER_SIDE_OF_INVALID_EYE_FRAME,
-                }
-            }
-        }, indent=4)
-    )
-
     if SAVE_ANNOTATED_VIDEO:
         output_video_path = utils.RESULTS_PATH / input_video_file_path.name
         print(f"Writing annotated video file to {output_video_path}")
@@ -182,7 +207,16 @@ def main():
     if REUSE_DLC_OUTPUT_H5_IN_ASSET:
         for file in temp_files:
             file.unlink()
+    
+    end_date_time = datetime.datetime.now()
+    processing_dict = utils.get_processing_dict(start_date_time, end_date_time)
+    processing_model = DataProcess(**processing_dict)
+    processing_pipeline = PipelineProcess(data_processes = [processing_model], processor_full_name='Ben Hardcastle')
+    processing = Processing(processing_pipeline=processing_pipeline)
+    processing.write_standard_file(utils.RESULTS_PATH)
 
+    utils.read_and_make_qc_figure()
+    utils.write_qc_json(dlc_output_h5_path)
     
 if __name__ == "__main__":
     main()
