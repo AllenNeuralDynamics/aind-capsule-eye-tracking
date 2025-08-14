@@ -207,7 +207,16 @@ def parse_session_id() -> str:
             print('using session_id from folder name:', session_path)
             break
         except ValueError:
-            pass
+            print('searching session_path for data description:', session_path)
+            data_description_jsons = list(session_path.glob('data_description.json'))
+            if len(data_description_jsons) == 0:
+                raise Exception('no data description jsons found', data_description_jsons)
+            elif len(data_description_jsons) == 1:
+                data_description = open(data_description_jsons[0])
+                session_id = json.load(data_description)['name']
+                break
+            else:
+                raise Exception('multiple data description jsons found', data_description_jsons)
 
         data_description_json = session_path / 'data_description.json'
         if not data_description_json.exists():
