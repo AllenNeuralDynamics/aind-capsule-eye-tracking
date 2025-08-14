@@ -205,7 +205,16 @@ def parse_session_id() -> str:
         try: # avoid parsing model folder, better way to do this?
             session_id = npc_session.parsing.extract_aind_session_id(session_path.stem)
         except ValueError:
-            pass
+            print('searching session_path for data description:', session_path)
+            data_description_jsons = list(session_path.glob('data_description.json'))
+            if len(data_description_jsons) == 0:
+                raise Exception('no data description jsons found', data_description_jsons)
+            elif len(data_description_jsons) == 1:
+                data_description = open(data_description_jsons[0])
+                session_id = json.load(data_description)['name']
+                break
+            else:
+                raise Exception('multiple data description jsons found', data_description_jsons)
 
     if session_id is None:
         raise FileNotFoundError('No data asset attached that follows aind session format')
