@@ -1,5 +1,5 @@
 metadata_version: 1
-name: aind-capsule-eye-tracking
+name: Carter's aind-capsule-eye-tracking
 description: Port of the lims2 eye-tracking pipeline - outputs annotated points and
   ellipse fits for eye-perimeter, pupil and corneal reflection.
 authors:
