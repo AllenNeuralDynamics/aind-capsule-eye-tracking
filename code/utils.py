@@ -211,7 +211,7 @@ def parse_session_id() -> str:
         print('searching session_path for data description:', session_path)
         data_description_jsons = list(session_path.glob('data_description.json'))
         if len(data_description_jsons) != 1:
-            raise FileNotFoundError(f'Expected 1 data description json. Found {len(data_description_jsons)}: {data_description_jsons}')
+            print(f'Expected 1 data description json. Found {len(data_description_jsons)}: {data_description_jsons}. Cannot extract the session_id without the right data description')
         else:
             data_description = open(data_description_jsons[0])
             session_id = json.load(data_description)['name']
