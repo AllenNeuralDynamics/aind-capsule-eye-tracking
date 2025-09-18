@@ -202,17 +202,18 @@ def parse_session_id() -> str:
     
     session_id = None
     for session_path in session_paths:
-        try: # avoid parsing model folder, better way to do this?
+        try:
             session_id = npc_session.parsing.extract_aind_session_id(session_path.stem)
+            print('using session_id from folder name:', session_path)
             break
         except ValueError:
             pass
 
-        print('searching session_path for data description:', session_path)
-        data_description_jsons = list(session_path.glob('data_description.json'))
-        if len(data_description_jsons) != 1:
-            print(f'Expected 1 data description json. Found {len(data_description_jsons)}: {data_description_jsons}. Cannot extract the session_id without the right data description')
+        data_description_json = session_path / 'data_description.json'
+        if not data_description_json.exists():
+            continue
         else:
+            print('using session_id in', data_description_json)
             data_description = open(data_description_jsons[0])
             session_id = json.load(data_description)['name']
             break
