@@ -228,7 +228,7 @@ def parse_session_id() -> str:
             break
 
      else:
-         raise FileNotFoundError('No data asset attached that follows aind session format')
+        raise FileNotFoundError('No data asset attached that follows aind session format')
     
     return session_id
 
