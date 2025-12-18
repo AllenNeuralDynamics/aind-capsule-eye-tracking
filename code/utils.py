@@ -226,8 +226,7 @@ def parse_session_id() -> str:
             data_description = open(data_description_jsons[0])
             session_id = json.load(data_description)['name']
             break
-
-     else:
+    else:
         raise FileNotFoundError('No data asset attached that follows aind session format')
     
     return session_id
