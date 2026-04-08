@@ -211,9 +211,13 @@ def main():
     end_date_time = datetime.datetime.now()
     processing_dict = utils.get_processing_dict(start_date_time, end_date_time)
     processing_model = DataProcess(**processing_dict)
-    processing_pipeline = PipelineProcess(data_processes = [processing_model], processor_full_name='Ben Hardcastle')
-    processing = Processing(processing_pipeline=processing_pipeline)
-    processing.write_standard_file(utils.RESULTS_PATH)
+    # processing_pipeline = PipelineProcess(data_processes = [processing_model], processor_full_name='Ben Hardcastle')
+    # processing = Processing(processing_pipeline=processing_pipeline)
+    # processing.write_standard_file(utils.RESULTS_PATH)
+    with open(
+        output_dir / "eye_tracking_data_process.json", "w"
+    ) as f:
+        json.dump(json.loads(processing_model.model_dump_json()), f, indent=4)
 
     utils.read_and_make_qc_figure()
     utils.write_qc_json(dlc_output_h5_path)
