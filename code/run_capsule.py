@@ -63,14 +63,14 @@ def main():
     else:
         shutil.copy(procedures_json_path[0].as_posix(), (utils.RESULTS_PATH / 'procedures.json').as_posix())
 
-    data_description_dict = utils.get_data_description_dict()
-    data_description = DataDescription(**data_description_dict)
+    # data_description_dict = utils.get_data_description_dict()
+    # data_description = DataDescription(**data_description_dict)
 
-    derived_data_description = DerivedDataDescription.from_data_description(
-        data_description=data_description, process_name="dlc-eye"
-    )
-    with (utils.RESULTS_PATH / "data_description.json").open("w") as f:
-        f.write(derived_data_description.model_dump_json(indent=3))
+    # derived_data_description = DerivedDataDescription.from_data_description(
+    #     data_description=data_description, process_name="dlc-eye"
+    # )
+    # with (utils.RESULTS_PATH / "data_description.json").open("w") as f:
+    #     f.write(derived_data_description.model_dump_json(indent=3))
     
     if REUSE_DLC_OUTPUT_H5_IN_ASSET:
         # get existing h5 file from data/ 
@@ -215,7 +215,7 @@ def main():
     # processing = Processing(processing_pipeline=processing_pipeline)
     # processing.write_standard_file(utils.RESULTS_PATH)
     with open(
-        output_dir / "eye_tracking_data_process.json", "w"
+        utils.RESULTS_PATH / "eye_tracking_data_process.json", "w"
     ) as f:
         json.dump(json.loads(processing_model.model_dump_json()), f, indent=4)
 

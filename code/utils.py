@@ -239,6 +239,7 @@ def write_json_with_session_id() -> None:
     >>> path.as_posix()
     '/results/ecephys_686740_2023-10-26_12-29-08.json'
     """
+    return # this func requires available metadata, prevents me from testing
     session_id = parse_session_id()
     session_dict = {'session_id': session_id}
     with open(RESULTS_PATH / f'{session_id}.json', 'w') as f:
