@@ -1,12 +1,10 @@
-# hash:sha256:42e869cad49f9b23f18361559e395377cf17e3a8b267186af8020c3fe27e2225
+# hash:sha256:cd7f588b6e49ff89013320fdc8cb5e7440991b5194ebb9f1b4976bfc2b9734de
 ARG REGISTRY_HOST
 FROM $REGISTRY_HOST/codeocean/tensorflow:2.11-python3.10-cuda11.7.0-runtime-ubuntu22.04
 
 ARG DEBIAN_FRONTEND=noninteractive
-
 ARG GIT_ASKPASS
-ARG GIT_ACCESS_TOKEN
-COPY git-askpass /
+COPY git-ask-pass /
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -28,9 +26,6 @@ RUN pip install -U --no-cache-dir \
     moviepy==1.0.3 \
     npc-session==0.1.32
 
-ADD "https://github.com/coder/code-server/releases/download/v4.9.0/code-server-4.9.0-linux-amd64.tar.gz" /.code-server/code-server.tar.gz
-	
-RUN cd /.code-server \
-	&& tar -xvf code-server.tar.gz \
-	&& rm code-server.tar.gz \
-	&& ln -s /.code-server/code-server-4.9.0-linux-amd64/bin/code-server  /usr/bin/code-server
+COPY postInstall /
+RUN --mount=type=secret,id=secrets . /run/secrets/secrets \
+    && /postInstall

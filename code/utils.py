@@ -247,10 +247,16 @@ def write_json_with_session_id() -> None:
 
 def get_video_paths() -> Iterator[pathlib.Path]:
     yield from (
-        p for p in DATA_PATH.rglob(VIDEO_FILE_GLOB_PATTERN) 
+        path
+        for path in DATA_PATH.rglob("*")
         if (
-            DLC_PROJECT_PATH not in p.parents
-            and p.suffix in VIDEO_SUFFIXES
+            path.is_file()
+            and DLC_PROJECT_PATH not in path.parents
+            and path.suffix.lower() in VIDEO_SUFFIXES
+            and (
+                path.match(VIDEO_FILE_GLOB_PATTERN)
+                or path.parent.match(VIDEO_FILE_GLOB_PATTERN)
+            )
         )
     )
 
