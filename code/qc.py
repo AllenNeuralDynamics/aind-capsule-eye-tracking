@@ -85,14 +85,22 @@ def plot_video_frame_with_pupil_path(
     video_path: str | pathlib.Path | cv2.VideoCapture, 
     pupil_ellipses: Sequence[utils.Ellipse] | pd.DataFrame, 
     ) -> plt.Figure:
-    frame_index = random.randint(0, utils.get_video_frame_count(video_path))
+    frame_index = random.randrange(utils.get_video_frame_count(video_path))
     fig = plot_video_frame(video_path, frame_index)
     ax = fig.axes[0]
     if isinstance(pupil_ellipses, pd.DataFrame):
-        xy = pupil_ellipses[['center_x', 'center_y']].to_numpy().T
+        xy = pupil_ellipses[['center_x', 'center_y']].to_numpy(dtype=float)
     else:
-        xy = ((e.center_x for e in pupil_ellipses), (e.center_y for e in pupil_ellipses))
-    ax.plot(*xy, color=ELLIPSE_COLORS['pupil'], linewidth=.4, alpha=.5)
+        xy = np.array([(e.center_x, e.center_y) for e in pupil_ellipses]).reshape(-1, 2)
+    xy = xy[np.isfinite(xy).all(axis=1)]
+    if len(xy):
+        ax.plot(*xy.T, color=ELLIPSE_COLORS['pupil'], linewidth=.4, alpha=.5)
+    else:
+        ax.text(
+            .5, .5, 'No valid pupil ellipse fits',
+            transform=ax.transAxes, ha='center', va='center',
+            color='white', bbox=dict(facecolor='black', alpha=.7),
+        )
     ax.set_title('path of estimated pupil center across all frames', fontsize=8)
     return fig
 
@@ -183,5 +191,3 @@ def plot_video_frame_with_ellipses(
                 )
             )
     return fig
-
-
