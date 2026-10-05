@@ -1,5 +1,6 @@
 import contextlib
 import json
+import logging
 import os
 import pathlib
 import datetime
@@ -25,6 +26,13 @@ SAVE_ANNOTATED_VIDEO = False
 REUSE_DLC_OUTPUT_H5_IN_ASSET = True
 """Instead of re-generating DLC h5 file, use one in a data asset - for quickly testing
 ellipse fitting, qc"""
+
+@contextlib.contextmanager
+def optional_qc(step):
+    try:
+        yield
+    except Exception:
+        logging.exception("Optional QC step failed: %s; continuing", step)
 
 def main():
     start_date_time = datetime.datetime.now()
@@ -115,112 +123,120 @@ def main():
         utils.write_area_and_average_confidence(dlc_output_h5_path, body_part, body_part_to_df[body_part].copy(deep=True))
     # qc plots -------------------------------------------------------------------- #
 
-    utils.QC_PATH.mkdir(exist_ok=True, parents=True)
+    with optional_qc("create QC directory"):
+        utils.QC_PATH.mkdir(exist_ok=True, parents=True)
 
     # example frames with ellipses drawn 
     NUM_FRAMES = 5
     print(f"Writing {NUM_FRAMES} example frames to {utils.QC_PATH}")
-    total_frames = utils.get_video_frame_count(input_video_file_path)
-    step = total_frames // NUM_FRAMES + 1
-    for idx in range(step//2, total_frames, step): # avoid frames at the very start/end
-        qc.plot_video_frame_with_ellipses(
-            video_path=input_video_file_path,
-            all_ellipses=body_part_to_df,
-            frame_index=idx,
-            dlc_output_h5_path=dlc_output_h5_path,
-        ).savefig(
-            utils.QC_PATH / f"{input_video_file_path.stem}_{idx}.png",
-            dpi=300,
-            bbox_inches="tight",
-            pad_inches=0,
-        )
-    
-    # path of fitted pupil on a frame
-    print(f"Writing example frame with path of pupil center to {utils.QC_PATH}")
-    qc.plot_video_frame_with_pupil_path(
-        video_path=input_video_file_path,
-        pupil_ellipses=body_part_to_df['pupil'],
-        ).savefig(
-            utils.QC_PATH / f"{input_video_file_path.stem}_pupil_path.png",
-            dpi=300,
-            bbox_inches="tight",
-            pad_inches=0,
-        )
-
-    # pupil area timeseries
-    print(f"Writing plot of pupil area to {utils.QC_PATH}")
-    qc.plot_pupil_area(
-        pupil_ellipses=body_part_to_df['pupil'],
-        pixel_to_cm=None,
-        fps=utils.get_dlc_pickle_metadata(dlc_output_h5_path)['fps'],
-        ).savefig(
-            utils.QC_PATH / f"{input_video_file_path.stem}_pupil_area.png",
-            dpi=300,
-            bbox_inches="tight",
-            pad_inches=0,
-        )
-
-    # frames that didn't meet criteria for fitting
-    NUM_FRAMES_PER_ELLIPSE = 5
-    print(f"Writing sets of up to {NUM_FRAMES_PER_ELLIPSE} frames that didn't meet criteria for fitting each ellipse type")
-    total_frames = utils.get_video_frame_count(input_video_file_path)
-    folder = utils.QC_PATH / "failed_ellipse_fits"
-    for body_part, df in body_part_to_df.items():
-        frames_without_ellipses = np.where(pd.isna(df.center_x))[0]
-        if (num_frames := len(frames_without_ellipses)) == 0:
-            continue
-        json_path = folder / f"{body_part}.json"
-        print(f"\t- failed to fit {body_part} ellipses for {num_frames} frames")
-        folder.mkdir(exist_ok=True, parents=True)
-        print(f"\t- writing frame numbers to {json_path}")
-        json_path.write_text(
-            json.dumps(
-                dict(frames_without_ellipses=frames_without_ellipses.tolist()),
-                indent=4,
-                )
-            )
-        random.shuffle(frames_without_ellipses)
-        for idx in range(min(num_frames, NUM_FRAMES_PER_ELLIPSE)):
-            fig = qc.plot_video_frame_with_dlc_points(
+    with optional_qc("example frames"):
+        total_frames = utils.get_video_frame_count(input_video_file_path)
+        step = total_frames // NUM_FRAMES + 1
+        for idx in range(step//2, total_frames, step): # avoid frames at the very start/end
+            qc.plot_video_frame_with_ellipses(
                 video_path=input_video_file_path,
+                all_ellipses=body_part_to_df,
+                frame_index=idx,
                 dlc_output_h5_path=dlc_output_h5_path,
-                frame_index=frames_without_ellipses[idx],
-            )
-            fig.suptitle(f"did not meet criteria for ellipse-fitting of {body_part}")
-            fig.savefig(
-                folder / f"{body_part}_{frames_without_ellipses[idx]}.png",
+            ).savefig(
+                utils.QC_PATH / f"{input_video_file_path.stem}_{idx}.png",
                 dpi=300,
                 bbox_inches="tight",
                 pad_inches=0,
             )
     
+    # path of fitted pupil on a frame
+    print(f"Writing example frame with path of pupil center to {utils.QC_PATH}")
+    with optional_qc("pupil path"):
+        qc.plot_video_frame_with_pupil_path(
+            video_path=input_video_file_path,
+            pupil_ellipses=body_part_to_df['pupil'],
+            ).savefig(
+                utils.QC_PATH / f"{input_video_file_path.stem}_pupil_path.png",
+                dpi=300,
+                bbox_inches="tight",
+                pad_inches=0,
+            )
+
+    # pupil area timeseries
+    print(f"Writing plot of pupil area to {utils.QC_PATH}")
+    with optional_qc("pupil area"):
+        qc.plot_pupil_area(
+            pupil_ellipses=body_part_to_df['pupil'],
+            pixel_to_cm=None,
+            fps=utils.get_dlc_pickle_metadata(dlc_output_h5_path)['fps'],
+            ).savefig(
+                utils.QC_PATH / f"{input_video_file_path.stem}_pupil_area.png",
+                dpi=300,
+                bbox_inches="tight",
+                pad_inches=0,
+            )
+
+    # frames that didn't meet criteria for fitting
+    NUM_FRAMES_PER_ELLIPSE = 5
+    print(f"Writing sets of up to {NUM_FRAMES_PER_ELLIPSE} frames that didn't meet criteria for fitting each ellipse type")
+    folder = utils.QC_PATH / "failed_ellipse_fits"
+    for body_part, df in body_part_to_df.items():
+        with optional_qc(f"failed {body_part} ellipse fits"):
+            frames_without_ellipses = np.where(pd.isna(df.center_x))[0]
+            if (num_frames := len(frames_without_ellipses)) == 0:
+                continue
+            json_path = folder / f"{body_part}.json"
+            print(f"\t- failed to fit {body_part} ellipses for {num_frames} frames")
+            folder.mkdir(exist_ok=True, parents=True)
+            print(f"\t- writing frame numbers to {json_path}")
+            json_path.write_text(
+                json.dumps(
+                    dict(frames_without_ellipses=frames_without_ellipses.tolist()),
+                    indent=4,
+                    )
+                )
+            random.shuffle(frames_without_ellipses)
+            for idx in range(min(num_frames, NUM_FRAMES_PER_ELLIPSE)):
+                fig = qc.plot_video_frame_with_dlc_points(
+                    video_path=input_video_file_path,
+                    dlc_output_h5_path=dlc_output_h5_path,
+                    frame_index=frames_without_ellipses[idx],
+                )
+                fig.suptitle(f"did not meet criteria for ellipse-fitting of {body_part}")
+                fig.savefig(
+                    folder / f"{body_part}_{frames_without_ellipses[idx]}.png",
+                    dpi=300,
+                    bbox_inches="tight",
+                    pad_inches=0,
+                )
+    
     if SAVE_ANNOTATED_VIDEO:
         output_video_path = utils.RESULTS_PATH / input_video_file_path.name
         print(f"Writing annotated video file to {output_video_path}")
-        qc.write_video_with_ellipses_and_dlc_points(
-            video_path=input_video_file_path, 
-            all_ellipses=body_part_to_df,
-            dlc_output_h5_path=dlc_output_h5_path,
-            dest_path=output_video_path,
-        )
+        with optional_qc("annotated video"):
+            qc.write_video_with_ellipses_and_dlc_points(
+                all_ellipses=body_part_to_df,
+                video_path=input_video_file_path,
+                dlc_output_h5_path=dlc_output_h5_path,
+                dest_path=output_video_path,
+            )
 
     if REUSE_DLC_OUTPUT_H5_IN_ASSET:
         for file in temp_files:
             file.unlink()
     
-    end_date_time = datetime.datetime.now()
-    processing_dict = utils.get_processing_dict(start_date_time, end_date_time)
-    processing_model = DataProcess(**processing_dict)
-    # processing_pipeline = PipelineProcess(data_processes = [processing_model], processor_full_name='Ben Hardcastle')
-    # processing = Processing(processing_pipeline=processing_pipeline)
-    # processing.write_standard_file(utils.RESULTS_PATH)
-    with open(
-        utils.RESULTS_PATH / "eye_tracking_data_process.json", "w"
-    ) as f:
-        json.dump(json.loads(processing_model.model_dump_json()), f, indent=4)
+    with optional_qc("processing metadata"):
+        end_date_time = datetime.datetime.now()
+        processing_dict = utils.get_processing_dict(start_date_time, end_date_time)
+        processing_model = DataProcess(**processing_dict)
+        # processing_pipeline = PipelineProcess(data_processes = [processing_model], processor_full_name='Ben Hardcastle')
+        # processing = Processing(processing_pipeline=processing_pipeline)
+        # processing.write_standard_file(utils.RESULTS_PATH)
+        with open(
+            utils.RESULTS_PATH / "eye_tracking_data_process.json", "w"
+        ) as f:
+            json.dump(json.loads(processing_model.model_dump_json()), f, indent=4)
 
-    utils.read_and_make_qc_figure()
-    utils.write_qc_json(dlc_output_h5_path)
+    with optional_qc("aggregate QC figure"):
+        utils.read_and_make_qc_figure()
+    with optional_qc("QC JSON"):
+        utils.write_qc_json(dlc_output_h5_path)
     
 if __name__ == "__main__":
     main()
